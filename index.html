@@ -257,6 +257,9 @@ aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(660px,100%);backgro
 .pill.cv-A{background:var(--ok-soft);color:var(--ok)}
 .pill.cv-B{background:var(--cy-soft);color:var(--cy)}
 .pill.cv-C{background:var(--soft);color:var(--muted)}
+.mixfloat .ftbl .mxout,.mixnarrow .ftbl .mxout{background:var(--brand-yel-soft)}
+.mixfloat .ftbl th.mxout,.mixnarrow .ftbl th.mxout{background:var(--brand-yel);color:#26201F}
+.mxzero{color:var(--bad);font-weight:700}
 </style>
 
 <header class="redhead" id="redhead">
@@ -1532,7 +1535,7 @@ function mixHTML(c){
   const sku=(p)=>`${esc(p)} · ${esc(nome(p))}<br><span class="tag j">${esc(fam(p))}</span>`;
   let body='';
   if(mixSt.tab==='op')body=`<table class="ftbl"><thead><tr><th>SKU para oferecer</th><th class="r">Estoque na filial</th><th>Curva</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td>${curv(x.p)}</td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Nenhum SKU com estoque nesta filial que o cliente ainda não compre.</td></tr>'}</tbody></table>`;
-  else if(mixSt.tab==='ja')body=`<table class="ftbl"><thead><tr><th>SKU que já compra</th><th class="r">Ago</th><th class="r">Set</th><th class="r">Out</th><th class="r">Estoque na filial</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td>${x.m.map(v=>`<td class="r num">${v?R2(v):'–'}</td>`).join('')}<td class="r num">${stk(x.e)}</td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Sem compra de SKU Jazam em ago–out na planilha.</td></tr>'}</tbody></table>`;
+  else if(mixSt.tab==='ja')body=`<table class="ftbl"><thead><tr><th>SKU que já compra</th><th class="r">Ago</th><th class="r">Set</th><th class="r mxout">Out</th><th class="r">Estoque na filial</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td>${x.m.map((v,i)=>i===2?`<td class="r num mxout">${v?`<b>${R2(v)}</b>`:`<span class="mxzero">${R2(0)}</span>`}</td>`:`<td class="r num">${v?R2(v):'–'}</td>`).join('')}<td class="r num">${stk(x.e)}</td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Sem compra de SKU Jazam em ago–out na planilha.</td></tr>'}</tbody></table>`;
   else body=`<table class="ftbl"><thead><tr><th>SKU em estoque na filial</th><th class="r">Estoque</th><th>Curva</th><th>Cliente</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td>${curv(x.p)}</td><td>${x.b?'<span class="pill p-ok">Já compra</span>':'<span class="pill p-neutral">Não compra</span>'}</td><td>${pill(x.e)}</td></tr>`).join('')}</tbody></table>`;
   const kp=(v,l)=>`<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span></div>`;
   const sups=[...new Set(c.links.map(l=>supCode(l.si)))].filter(x=>FILIAL_SUP[x]).map(x=>FILIAL_SUP[x]);
