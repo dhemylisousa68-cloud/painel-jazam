@@ -254,6 +254,9 @@ aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(660px,100%);backgro
 .mixfoot{line-height:1.35}
 .mixnarrow .mixbody{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px}
 @media (max-width:1100px){.mixfloat{display:none!important}.mixnarrow:not(:empty){display:grid}}
+.pill.cv-A{background:var(--ok-soft);color:var(--ok)}
+.pill.cv-B{background:var(--cy-soft);color:var(--cy)}
+.pill.cv-C{background:var(--soft);color:var(--muted)}
 </style>
 
 <header class="redhead" id="redhead">
@@ -1514,7 +1517,11 @@ function mixHTML(c){
   const rs=mixRamo(c.ramo);
   const nome=p=>(MIX.prods[p]||[p])[0].replace(/^JAZAM\s+/i,'');
   const fam=p=>mixFam((MIX.prods[p]||[''])[0]);
-  const op=Object.keys(est).filter(p=>!bought(p)).map(p=>({p,e:est[p],n:rs.by[p]||0,pen:rs.n?(rs.by[p]||0)/rs.n:0})).sort((a,b)=>b.pen-a.pen||b.e[1]-a.e[1]);
+  /* curva do produto (A, B, C) vem do relatório de estoque; se a filial não tem, usa a de outra filial */
+  const cur=p=>{let c=(est[p]&&est[p][4])||'';if(!c)for(const f of [3,9,11]){const x=MIX.est[f]&&MIX.est[f][p];if(x&&x[4]){c=x[4];break}}return /^[ABC]$/i.test(c)?c.toUpperCase():''};
+  const ord=c=>c==='A'?0:c==='B'?1:c==='C'?2:3;
+  const curv=p=>{const c=cur(p);return c?`<span class="pill cv-${c}">Curva ${c}</span>`:'<span class="muted small">Sem curva</span>'};
+  const op=Object.keys(est).filter(p=>!bought(p)).map(p=>({p,e:est[p],n:rs.by[p]||0,pen:rs.n?(rs.by[p]||0)/rs.n:0})).sort((a,b)=>ord(cur(a.p))-ord(cur(b.p))||b.pen-a.pen||b.e[1]-a.e[1]);
   const ja=Object.keys(mine).filter(bought).map(p=>({p,m:mine[p],v:mine[p][0]+mine[p][1]+mine[p][2],e:est[p]})).sort((a,b)=>b.v-a.v);
   const all=Object.keys(est).map(p=>({p,e:est[p],b:!!bought(p)})).sort((a,b)=>b.e[1]-a.e[1]);
   const base=mixSt.tab==='op'?op:mixSt.tab==='ja'?ja:all;
@@ -1524,9 +1531,9 @@ function mixHTML(c){
   const stk=e=>e?`<b>${int.format(e[1])}</b> cx <span class="muted">· ${int.format(e[0])} un</span>`:'–';
   const sku=(p)=>`${esc(p)} · ${esc(nome(p))}<br><span class="tag j">${esc(fam(p))}</span>`;
   let body='';
-  if(mixSt.tab==='op')body=`<table class="ftbl"><thead><tr><th>SKU para oferecer</th><th class="r">Estoque na filial</th><th class="r">Preço un.</th><th>${rs.glob?'Clientes da base que compram':'Clientes do ramo que compram'}</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td class="r num">${R2(x.e[2])}</td><td><div class="bar"><i style="width:${Math.round(x.pen*100)}%"></i></div><span class="small muted">${int.format(x.n)} de ${int.format(rs.n)} · ${Math.round(x.pen*100)}%</span></td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Nenhum SKU com estoque nesta filial que o cliente ainda não compre.</td></tr>'}</tbody></table>`;
+  if(mixSt.tab==='op')body=`<table class="ftbl"><thead><tr><th>SKU para oferecer</th><th class="r">Estoque na filial</th><th>Curva</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td>${curv(x.p)}</td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Nenhum SKU com estoque nesta filial que o cliente ainda não compre.</td></tr>'}</tbody></table>`;
   else if(mixSt.tab==='ja')body=`<table class="ftbl"><thead><tr><th>SKU que já compra</th><th class="r">Ago</th><th class="r">Set</th><th class="r">Out</th><th class="r">Estoque na filial</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td>${x.m.map(v=>`<td class="r num">${v?R2(v):'–'}</td>`).join('')}<td class="r num">${stk(x.e)}</td><td>${pill(x.e)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Sem compra de SKU Jazam em ago–out na planilha.</td></tr>'}</tbody></table>`;
-  else body=`<table class="ftbl"><thead><tr><th>SKU em estoque na filial</th><th class="r">Estoque</th><th class="r">Preço un.</th><th>Cliente</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td class="r num">${R2(x.e[2])}</td><td>${x.b?'<span class="pill p-ok">Já compra</span>':'<span class="pill p-neutral">Não compra</span>'}</td><td>${pill(x.e)}</td></tr>`).join('')}</tbody></table>`;
+  else body=`<table class="ftbl"><thead><tr><th>SKU em estoque na filial</th><th class="r">Estoque</th><th>Curva</th><th>Cliente</th><th>Situação</th></tr></thead><tbody>${list.map(x=>`<tr><td>${sku(x.p)}</td><td class="r num">${stk(x.e)}</td><td>${curv(x.p)}</td><td>${x.b?'<span class="pill p-ok">Já compra</span>':'<span class="pill p-neutral">Não compra</span>'}</td><td>${pill(x.e)}</td></tr>`).join('')}</tbody></table>`;
   const kp=(v,l)=>`<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span></div>`;
   const sups=[...new Set(c.links.map(l=>supCode(l.si)))].filter(x=>FILIAL_SUP[x]).map(x=>FILIAL_SUP[x]);
   const note=mixSt.auto?(mixSt.fil===mixSt.auto?'Filial definida pela supervisão do cliente.':'Você está vendo outra filial; a do cliente é a '+mixSt.auto+'.'):'Supervisão sem filial definida: escolha a filial de onde sai o pedido.';
@@ -1540,7 +1547,7 @@ function mixHTML(c){
     <div class="seg mixtabs"><button type="button" data-mixtab="op" aria-pressed="${mixSt.tab==='op'}">Oferecer<span class="ct">${op.length}</span></button><button type="button" data-mixtab="ja" aria-pressed="${mixSt.tab==='ja'}">Já compra<span class="ct">${ja.length}</span></button><button type="button" data-mixtab="est" aria-pressed="${mixSt.tab==='est'}">Estoque da filial<span class="ct">${all.length}</span></button></div>
     <div class="mixchips"><button type="button" class="chip" data-mixfam="" aria-pressed="${!mixSt.fam}">Todas</button>${fams.map(f=>`<button type="button" class="chip" data-mixfam="${esc(f)}" aria-pressed="${mixSt.fam===f}">${esc(f)}</button>`).join('')}</div>
     <div class="mixbody scroll">${body}</div>
-    <div class="mixfoot small muted">Vendas: ${esc(MIX.src)} (ago–out/26) · Estoque: ${esc(MIX.estSrc)}, posição de ${esc(MIX.dt)}. ${rs.glob?'Ranking pelos clientes da base Jazam que já compram o SKU (o ramo deste cliente tem poucos clientes).':'Ranking pelos clientes do mesmo ramo que já compram o SKU.'} Compras fora de ago–out não entram.</div>`;
+    <div class="mixfoot small muted">Vendas: ${esc(MIX.src)} (ago–out/26) · Estoque: ${esc(MIX.estSrc)}, posição de ${esc(MIX.dt)}. Curva A, B ou C mostra quanto o produto vende no geral; a lista segue essa ordem e, em empate, os clientes do mesmo ramo que já compram. Compras fora de ago–out não entram.</div>`;
 }
 function paintMix(){const c=st.cli,f=$('mixFloat');if(!f)return;if(!c||!MIX){f.hidden=true;return}f.hidden=false;const h=mixHTML(c);f.innerHTML=h;const n=$('mixNarrow');if(n)n.innerHTML=h}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-mixtab],[data-mixfil],[data-mixfam],[data-mixclose]');if(!b||!st.cli)return;
