@@ -278,8 +278,6 @@ aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(660px,100%);backgro
 .hbsec{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .hbsec.on{border-color:var(--brand-red)}
 .hbsec.open{box-shadow:0 8px 24px rgba(31,26,28,.10)}
-.hbgh{width:100%;display:grid;grid-template-columns:40px minmax(0,1fr) 18px;gap:12px;align-items:center;border:0;background:transparent;padding:12px 14px;cursor:pointer;text-align:left;color:var(--ink)}
-.hbgh:hover{background:var(--soft)}
 .hbico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--jz-soft);color:var(--jz)}
 .g-an .hbico{background:var(--cy-soft);color:var(--cy)}
 .g-ac .hbico{background:var(--ok-soft);color:var(--ok)}
@@ -321,6 +319,11 @@ body.spopen{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.splash{animation:none}.spbtn{transition:none}}
 /* os botões Oportunidades / Análises / Ação saem: a troca de seção é pela barra lateral */
 #grpBar{display:none}
+/* cabeçalho da seção: o nome leva direto à seção; a seta abre e fecha a lista de abas */
+.hbgh{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:stretch}
+.hbgo{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:center;border:0;background:transparent;padding:12px 4px 12px 14px;cursor:pointer;text-align:left;color:var(--ink)}
+.hbgo:hover,.hbtg:hover{background:var(--soft)}
+.hbtg{border:0;border-left:1px solid var(--line);background:transparent;cursor:pointer;color:var(--muted);display:grid;place-items:center;padding:0}
 </style>
 
 <header class="redhead" id="redhead">
@@ -1688,13 +1691,15 @@ function renderHomebar(){
   p.innerHTML=`<div class="hbhead"><span class="eyebrow">Cabral &amp; Sousa · Jazam</span><b>Oportunidades Jazam</b></div><div class="hbbar"></div>
     <div class="hbbody">${GRUPOS.map(([k,n])=>{
       const itens=TABS.filter(t=>t[0]!=='g'&&GRUPO_DE[t[0]]===k),on=st.grp===k,open=hbOpen===k;
-      return `<section class="hbsec g-${k}${on?' on':''}${open?' open':''}"><button type="button" class="hbgh" data-hbg="${k}" aria-expanded="${open}"><span class="hbico">${HB_ICON[k]||''}</span><span class="hbtx"><b>${esc(n)}</b><small>${on&&nomeAtual?esc(nomeAtual):itens.length+' abas'}</small></span>${HB_CHEV}</button>
+      return `<section class="hbsec g-${k}${on?' on':''}${open?' open':''}"><div class="hbgh"><button type="button" class="hbgo" data-hbs="${k}" title="Ir para ${esc(n)}"><span class="hbico">${HB_ICON[k]||''}</span><span class="hbtx"><b>${esc(n)}</b><small>${on&&nomeAtual?esc(nomeAtual):itens.length+' abas'}</small></span></button><button type="button" class="hbtg" data-hbg="${k}" aria-expanded="${open}" aria-label="${open?'Recolher':'Mostrar'} as abas de ${esc(n)}">${HB_CHEV}</button></div>
         ${open?`<div class="hbitems">${itens.map(t=>`<button type="button" class="hbitem" data-hbv="${t[0]}" aria-current="${st.view===t[0]}"><b>${esc(t[1])}</b><span>${esc(t[2]||'')}</span></button>`).join('')}</div>`:''}</section>`}).join('')}</div>`;
 }
 document.addEventListener('click',e=>{
   const hb=$('homebar');if(!hb)return;
   const h=e.target.closest('.hbhandle');
   if(h){hb.classList.toggle('open');h.setAttribute('aria-expanded',String(hb.classList.contains('open')));return}
+  const s=e.target.closest('[data-hbs]');
+  if(s){const k=s.dataset.hbs;const first=TABS.find(t=>t[0]!=='g'&&GRUPO_DE[t[0]]===k);const v=st.last[k]||(first&&first[0]);if(v){st.view=v;st.grp=k;st.all=false;hbOpen='';renderView();window.scrollTo({top:0,behavior:'smooth'})}hb.classList.remove('open');hb.classList.add('hbhide');return}
   const g=e.target.closest('[data-hbg]');
   if(g){hbOpen=hbOpen===g.dataset.hbg?'':g.dataset.hbg;renderHomebar();return}
   const b=e.target.closest('[data-hbv]');
@@ -1728,7 +1733,9 @@ document.addEventListener('click',e=>{
   st.ger=g;st.dir=t?dirOf(t.si):'';st.sup='';st.rca='';st.all=false;
   try{localStorage.setItem('painelJazamEquipe',g)}catch(err){}
   const s=$('splash');if(s)s.remove();document.body.classList.remove('spopen');
-  renderFilters();renderAll();updEquipeBtn();window.scrollTo(0,0)});
+  renderFilters();renderAll();updEquipeBtn();window.scrollTo(0,0);
+  /* depois de escolher a equipe, o menu de seções abre sozinho, com a seção atual aberta */
+  const hb=$('homebar');if(hb){hbOpen=st.grp;renderHomebar();hb.classList.remove('hbhide');hb.classList.add('open');const hh=hb.querySelector('.hbhandle');if(hh)hh.setAttribute('aria-expanded','true')}});
 
 function skuBlock(c){
   if(!HUB.sku)return `<div class="callout info"><b>Mix Jazam por produto</b><span>Importe a venda por produto em ↑ Subir dados para ver os itens que o cliente compra e os que faltam.</span></div>`;
