@@ -260,29 +260,44 @@ aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(660px,100%);backgro
 .mixfloat .ftbl .mxout,.mixnarrow .ftbl .mxout{background:var(--brand-yel-soft)}
 .mixfloat .ftbl th.mxout,.mixnarrow .ftbl th.mxout{background:var(--brand-yel);color:#26201F}
 .mxzero{color:var(--bad);font-weight:700}
-/* Barra de seções: aparece ao encostar na borda esquerda */
+/* Barra de seções: aparece ao encostar na borda esquerda; cada seção abre ao clicar */
 .homebar{position:fixed;left:0;top:0;bottom:0;z-index:12;pointer-events:none}
 .homebar>*{pointer-events:auto}
 .hbzone{position:absolute;left:0;top:0;bottom:0;width:14px}
 .hbhandle{position:absolute;left:0;top:50%;transform:translateY(-50%);width:26px;height:104px;border:0;border-radius:0 10px 10px 0;background:var(--brand-red);color:#fff;cursor:pointer;box-shadow:var(--shadow);display:grid;place-items:center;padding:0}
 .hbhandle span{writing-mode:vertical-rl;transform:rotate(180deg);font:700 11px var(--font-display);letter-spacing:.18em}
-.hbpanel{position:absolute;left:0;top:0;bottom:0;width:min(320px,86vw);background:var(--panel);border-right:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(-102%);transition:transform .18s ease-out;overflow-y:auto;padding:16px 14px 24px;display:grid;gap:14px;align-content:start;visibility:hidden}
+.hbpanel{position:absolute;left:0;top:0;bottom:0;width:min(320px,88vw);background:var(--bg);border-right:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(-102%);transition:transform .2s ease-out;overflow-y:auto;visibility:hidden;display:flex;flex-direction:column}
 .homebar:hover .hbpanel,.homebar:focus-within .hbpanel,.homebar.open .hbpanel{transform:none;visibility:visible}
 .homebar.hbhide .hbpanel{transform:translateX(-102%);visibility:hidden}
 .homebar:hover .hbhandle,.homebar.open .hbhandle{opacity:0}
-.hbtop{display:grid;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.hbtop b{font-family:var(--font-display);font-size:16px}
-.hbgrp{display:grid;gap:4px}
-.hbgh{display:flex;justify-content:space-between;align-items:center;font:700 11px var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-left:3px solid var(--brand-yel)}
-.hbgrp.on .hbgh{color:var(--jz);border-left-color:var(--brand-red)}
-.hbgh .ct{font-family:var(--font-body);font-weight:600}
-.hbitem{display:grid;gap:1px;text-align:left;border:0;background:transparent;border-radius:8px;padding:7px 10px;cursor:pointer}
+.hbhead{background:var(--brand-red);color:#fff;padding:20px 20px 16px;display:grid;gap:3px}
+.hbhead .eyebrow{color:#fff;opacity:.85}
+.hbhead b{font-family:var(--font-display);font-size:20px;letter-spacing:-.01em}
+.hbbar{height:6px;background:repeating-linear-gradient(90deg,var(--brand-red) 0 48px,var(--brand-yel) 48px 96px)}
+.hbbody{padding:14px;display:grid;gap:10px;align-content:start}
+.hbsec{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.hbsec.on{border-color:var(--brand-red)}
+.hbsec.open{box-shadow:0 8px 24px rgba(31,26,28,.10)}
+.hbgh{width:100%;display:grid;grid-template-columns:40px minmax(0,1fr) 18px;gap:12px;align-items:center;border:0;background:transparent;padding:12px 14px;cursor:pointer;text-align:left;color:var(--ink)}
+.hbgh:hover{background:var(--soft)}
+.hbico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--jz-soft);color:var(--jz)}
+.g-an .hbico{background:var(--cy-soft);color:var(--cy)}
+.g-ac .hbico{background:var(--ok-soft);color:var(--ok)}
+.hbtx{display:grid;gap:1px;min-width:0}
+.hbtx b{font-family:var(--font-display);font-size:15px;font-weight:600}
+.hbtx small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbsec.on .hbtx small{color:var(--jz);font-weight:600}
+.hbchev{color:var(--muted);transition:transform .18s}
+.hbsec.open .hbchev{transform:rotate(90deg)}
+.hbitems{display:grid;gap:2px;padding:4px 8px 10px;border-top:1px solid var(--line)}
+.hbitem{display:grid;gap:1px;text-align:left;border:0;background:transparent;border-radius:10px;padding:8px 12px 8px 14px;cursor:pointer;position:relative;color:var(--ink)}
 .hbitem b{font-weight:600;font-size:13.5px}
 .hbitem span{font-size:11.5px;color:var(--muted)}
 .hbitem:hover{background:var(--soft)}
 .hbitem[aria-current="true"]{background:var(--brand-yel-soft)}
+.hbitem[aria-current="true"]::before{content:"";position:absolute;left:3px;top:9px;bottom:9px;width:3px;border-radius:2px;background:var(--brand-red)}
 .hbitem[aria-current="true"] b{color:var(--jz)}
-@media (prefers-reduced-motion:reduce){.hbpanel{transition:none}}
+@media (prefers-reduced-motion:reduce){.hbpanel,.hbchev,.hbsec{transition:none}}
 </style>
 
 <header class="redhead" id="redhead">
@@ -1637,19 +1652,30 @@ async function supaBoot(){
   await sbPull();await sbCheckEditor();if(st.cli)renderDrawer();scheduleRender();
   setInterval(sbPull,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sbPull()})}
 
-/* ---------- barra de seções: aparece ao encostar na borda esquerda (ou ao tocar na aba MENU) ---------- */
+/* ---------- barra de seções: aparece ao encostar na borda esquerda (ou ao tocar na aba MENU); cada seção abre ao clicar ---------- */
+const HB_ICON={
+  op:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',
+  an:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>',
+  ac:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12.5 3 3 5-6"/></svg>'};
+const HB_CHEV='<svg class="hbchev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+let hbOpen='';
 function renderHomebar(){
   const p=$('hbPanel');if(!p)return;
-  p.innerHTML=`<div class="hbtop"><b>Seções do painel</b><span class="small muted">Oportunidades, análises e ação</span></div>`+GRUPOS.map(([k,n])=>{
-    const itens=TABS.filter(t=>t[0]!=='g'&&GRUPO_DE[t[0]]===k);
-    return `<div class="hbgrp${st.grp===k?' on':''}"><div class="hbgh"><span>${esc(n)}</span><span class="ct">${itens.length}</span></div>${itens.map(t=>`<button type="button" class="hbitem" data-hbv="${t[0]}" aria-current="${st.view===t[0]}"><b>${esc(t[1])}</b><span>${esc(t[2]||'')}</span></button>`).join('')}</div>`}).join('');
+  const nomeAtual=(TABS.find(t=>t[0]===st.view)||[])[1]||'';
+  p.innerHTML=`<div class="hbhead"><span class="eyebrow">Cabral &amp; Sousa · Jazam</span><b>Oportunidades Jazam</b></div><div class="hbbar"></div>
+    <div class="hbbody">${GRUPOS.map(([k,n])=>{
+      const itens=TABS.filter(t=>t[0]!=='g'&&GRUPO_DE[t[0]]===k),on=st.grp===k,open=hbOpen===k;
+      return `<section class="hbsec g-${k}${on?' on':''}${open?' open':''}"><button type="button" class="hbgh" data-hbg="${k}" aria-expanded="${open}"><span class="hbico">${HB_ICON[k]||''}</span><span class="hbtx"><b>${esc(n)}</b><small>${on&&nomeAtual?esc(nomeAtual):itens.length+' abas'}</small></span>${HB_CHEV}</button>
+        ${open?`<div class="hbitems">${itens.map(t=>`<button type="button" class="hbitem" data-hbv="${t[0]}" aria-current="${st.view===t[0]}"><b>${esc(t[1])}</b><span>${esc(t[2]||'')}</span></button>`).join('')}</div>`:''}</section>`}).join('')}</div>`;
 }
 document.addEventListener('click',e=>{
   const hb=$('homebar');if(!hb)return;
   const h=e.target.closest('.hbhandle');
   if(h){hb.classList.toggle('open');h.setAttribute('aria-expanded',String(hb.classList.contains('open')));return}
+  const g=e.target.closest('[data-hbg]');
+  if(g){hbOpen=hbOpen===g.dataset.hbg?'':g.dataset.hbg;renderHomebar();return}
   const b=e.target.closest('[data-hbv]');
-  if(b){st.view=b.dataset.hbv;st.grp=GRUPO_DE[st.view]||st.grp;st.all=false;renderView();window.scrollTo({top:0,behavior:'smooth'});hb.classList.remove('open');hb.classList.add('hbhide');return}
+  if(b){st.view=b.dataset.hbv;st.grp=GRUPO_DE[st.view]||st.grp;st.all=false;hbOpen='';renderView();window.scrollTo({top:0,behavior:'smooth'});hb.classList.remove('open');hb.classList.add('hbhide');return}
   if(hb.classList.contains('open')&&!e.target.closest('#homebar')){hb.classList.remove('open');const hh=hb.querySelector('.hbhandle');if(hh)hh.setAttribute('aria-expanded','false')}});
 document.addEventListener('mouseover',e=>{const hb=$('homebar');if(hb&&hb.classList.contains('hbhide')&&!e.target.closest('#homebar'))hb.classList.remove('hbhide')});
 
