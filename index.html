@@ -840,15 +840,15 @@ function renderRota(){
   $('fDia').innerHTML=DIAS.map(([d,n])=>`<button type="button" data-d="${d}" aria-pressed="${st.dia===d}">${n}${HUB.rota?`<span class="ct">${int.format(porDia[d]||0)}</span>`:''}</button>`).join('');
   $('fSoOp').checked=st.soOp;
   $('rtHead').innerHTML=`<tr><th>Seq.</th><th>Cliente</th>${ri===null?'<th>RCA</th>':''}<th>Situação</th><th>Plano</th><th>Indústrias que compra</th><th class="r">Média mensal (trim.)</th><th class="r">Jazam (trim.)</th><th class="r">Sugestão 1º pedido Jazam</th><th>Visita</th></tr>`;
-  if(ri===null&&!HUB.rota){info.innerHTML=`<div class="callout info"><b>Escolha um RCA no filtro acima</b><span>Sem rota importada, o roteiro mostra a carteira de um RCA por vez.</span></div>`;$('rtKpis').innerHTML='';$('rtBody').innerHTML='';LAST.rota=[];$('rtTitle').textContent='Roteiro do dia';return}
+  if(false){info.innerHTML=`<div class="callout info"><b>Escolha um RCA no filtro acima</b><span>Sem rota importada, o roteiro mostra a carteira de um RCA por vez.</span></div>`;$('rtKpis').innerHTML='';$('rtBody').innerHTML='';LAST.rota=[];$('rtTitle').textContent='Roteiro do dia';return}
   $('rtTitle').textContent='Roteiro do dia · '+(ri!==null?D.rcas[ri]:'todos os RCAs'+scopeLabel())+' · '+DIANOME[st.dia];
   let list;
   if(HUB.rota){list=rotaClientes(ri,st.dia);
     const fonte=HUBMETA.rota&&HUBMETA.rota.fileName?` Rota: ${esc(HUBMETA.rota.fileName)}.`:'';
     info.innerHTML=list.length?(ri===null?`<div class="callout info"><span>Mostrando as visitas de todos os RCAs${esc(scopeLabel())}. Escolha um RCA no filtro acima para ver só o roteiro dele.${fonte}</span></div>`:(fonte?`<div class="callout info"><span>${fonte.trim()}</span></div>`:'')):`<div class="callout info"><b>Nenhuma visita na rota de ${esc(DIANOME[st.dia])}</b><span>Escolha outro dia nos botões acima (o número mostra quantas visitas cada dia tem).${fonte}</span></div>`}
   else{
-    list=[...CODE2C.values()].filter(c=>c.links.some(l=>l.ri===ri&&ix.some(k=>l.m[k]>0))).map(c=>({c,e:null})).sort((a,b)=>sum(ix.map(k=>b.c.tot[k]))-sum(ix.map(k=>a.c.tot[k])));
-    info.innerHTML=`<div class="callout op"><b>Rota ainda não importada</b><span>Sem a rota do hub, mostro a carteira do RCA (clientes que compraram dele no trimestre), da maior compra para a menor. Importe a rota em ↑ Subir dados para ver os clientes de cada dia.</span></div>`;
+    list=[...CODE2C.values()].filter(c=>c.links.some(l=>linkOk(l)&&ix.some(k=>l.m[k]>0))).map(c=>{let b=null,bv=-1;for(const l of c.links){if(!linkOk(l))continue;const v=ix.reduce((a,k)=>a+(l.m[k]||0),0);if(v>bv){bv=v;b=l}}return {c,e:{ri:b?b.ri:-1,dias:new Set(),seq:null,freq:""}}}).sort((a,b)=>sum(ix.map(k=>b.c.tot[k]))-sum(ix.map(k=>a.c.tot[k])));
+    info.innerHTML=`<div class="callout op"><b>Rota ainda não importada</b><span>Sem a rota do hub, mostro a carteira ${ri===null?'da equipe selecionada':'do RCA'} (clientes que compraram no trimestre), da maior compra para a menor. Importe a rota em ↑ Subir dados para ver os clientes de cada dia.</span></div>`;
   }
   list=list.filter(x=>cidOk(x.c));
   if(st.soOp)list=list.filter(x=>!x.c.atende||!ix.some(k=>x.c.jz[k]>0));
@@ -864,7 +864,7 @@ function renderRota(){
     <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}</div></td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td>
     <td>${fs.map(f=>`<span class="tag ${fornCls(f)}">${esc(fornName(f))}</span>`).join('')||'<span class="muted small">outras</span>'}</td>
     <td class="r num">${R0(sum(ix.map(k=>c.tot[k]))/3)}</td><td class="r num">${R0(sum(ix.map(k=>c.jz[k])))}</td><td class="r num">${ref?R0(ref.med):'–'}</td>
-    <td class="small">${e?esc([...e.dias].sort().map(d=>DIANOME[d]).join(', ')+(e.freq?' · '+e.freq:'')):'–'}</td></tr>`}).join('')
+    <td class="small">${e&&e.dias.size?esc([...e.dias].sort().map(d=>DIANOME[d]).join(', ')+(e.freq?' · '+e.freq:'')):'–'}</td></tr>`}).join('')
     :`<tr><td colspan="10" class="empty">Nenhum cliente para mostrar.</td></tr>`;
 }
 
