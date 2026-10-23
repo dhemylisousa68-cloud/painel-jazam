@@ -419,6 +419,10 @@ body.vgeral .navcard{display:none}
 .atualiz small{font-size:10.5px;opacity:.88;letter-spacing:.02em}
 .atualiz b{font-size:13.5px;font-weight:700}
 @media (max-width:640px){.atualiz small{display:none}}
+/* gráficos maiores: sell-out em largura total; positivação e SKU/PDV lado a lado */
+.ggrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ggrid>.gcard:first-child{grid-column:1/-1}
+@media (max-width:820px){.ggrid{grid-template-columns:1fr}}
 </style>
 
 <header class="redhead" id="redhead">
@@ -957,18 +961,18 @@ function renderRota(){
     list=[...CODE2C.values()].filter(c=>c.links.some(l=>linkOk(l)&&ix.some(k=>l.m[k]>0))).map(c=>{let b=null,bv=-1;for(const l of c.links){if(!linkOk(l))continue;const v=ix.reduce((a,k)=>a+(l.m[k]||0),0);if(v>bv){bv=v;b=l}}return {c,e:{ri:b?b.ri:-1,dias:new Set(),seq:null,freq:""}}}).sort((a,b)=>sum(ix.map(k=>b.c.tot[k]))-sum(ix.map(k=>a.c.tot[k])));
     info.innerHTML=`<div class="callout op"><b>Rota ainda não importada</b><span>Sem a rota do hub, mostro a carteira ${ri===null?'da equipe selecionada':'do RCA'} (clientes que compraram no trimestre), da maior compra para a menor. Importe a rota em ↑ Subir dados para ver os clientes de cada dia.</span></div>`;
   }
-  list=list.filter(x=>cidOk(x.c));
+  list=list.filter(x=>cidOk(x.c));if(st.ocultaPos)list=list.filter(x=>!gPos(x.c));
   if(st.soOp)list=list.filter(x=>!x.c.atende||!ix.some(k=>x.c.jz[k]>0));
   if(st.bloq)list=list.filter(x=>!credito(x.c)?.bloq);
   LAST.rota=list;
   const op=list.filter(x=>!x.c.atende).length,par=list.filter(x=>x.c.atende&&!ix.some(k=>x.c.jz[k]>0)).length,blq=list.filter(x=>credito(x.c)?.bloq).length;
-  $('rtKpis').innerHTML=[[list.length,HUB.rota?'Visitas no roteiro':'Clientes no roteiro'],[op,'Sem Jazam (primeira venda)'],[par,'Jazam parado no trimestre'],[HUB.credito?blq:'–','Bloqueados no crédito'],[list.filter(x=>PLANO.has(String(x.c.code))).length,'Com plano de ação']]
+  $('rtKpis').innerHTML=[[list.length,HUB.rota?'Visitas no roteiro':'Clientes no roteiro'],[op,'Sem Jazam (primeira venda)'],[par,'Jazam parado no trimestre'],[HUB.credito?blq:'–','Bloqueados no crédito'],[list.filter(x=>PLANO.has(String(x.c.code))).length,'Com plano de ação'],[list.filter(x=>gPos(x.c)).length,'Positivados com Jazam no mês']]
     .map(([v,l])=>`<div class="kpi"><span class="v">${typeof v==='number'?int.format(v):v}</span><span class="l">${l}</span></div>`).join('');
   $('rtBody').innerHTML=list.length?list.slice(0,1500).map(({c,e})=>{const s=jzStatus(c),ref=!c.atende?refJazam(c.ramo,ix):null;
     const fs=[...new Set(c.links.filter(l=>ix.some(k=>l.m[k]>0)).map(l=>l.f))].filter(f=>isJ(f)||isC(f)||isA(f)||isM(f));
     return `<tr data-ci="${c.i}" tabindex="0"><td class="pos">${e&&e.seq!=null?e.seq:'–'}</td>
     <td class="cli"><b>${esc(c.name)}</b><small>${c.code} · ${esc(c.city)} · ${esc(c.ramo)}</small></td>${ri===null?`<td class="small">${e&&e.ri>=0?esc(D.rcas[e.ri]):'–'}</td>`:''}
-    <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}</div></td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td>
+    <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}${gPosPill(c)}</div></td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td>
     <td>${fs.map(f=>`<span class="tag ${fornCls(f)}">${esc(fornName(f))}</span>`).join('')||'<span class="muted small">outras</span>'}</td>
     <td class="r num">${R0(sum(ix.map(k=>c.tot[k]))/3)}</td><td class="r num">${R0(sum(ix.map(k=>c.jz[k])))}</td><td class="r num">${ref?R0(ref.med):'–'}</td>
     <td class="small">${e&&e.dias.size?esc([...e.dias].sort().map(d=>DIANOME[d]).join(', ')+(e.freq?' · '+e.freq:'')):'–'}</td></tr>`}).join('')
@@ -1904,24 +1908,26 @@ function gDia(m,a,b){
     if(x.d>=a&&x.d<=b){sell+=x.v;let s=sel.get(x.c.code);if(!s){s={c:x.c,v:0,sk:new Set(),ri:x.ri,si:x.si,mv:0};sel.set(x.c.code,s)}
       s.v+=x.v;s.sk.add(x.p);if(x.v>s.mv){s.mv=x.v;s.ri=x.ri;s.si=x.si}}}
   return {rows:rows.filter(x=>x.d>=a&&x.d<=b),dias,sel,sell}}
-function gBars(vals,labels,hi,fmt,id){
-  const W=640,H=210,pl=8,pr=8,pt=28,pb=26,n=vals.length,bw=(W-pl-pr)/n,mx=Math.max(...vals,1),sm=n>14;
+function gBars(vals,labels,hi,fmt,id,W0,H0){
+  const W=W0||640,H=H0||300,pl=8,pr=8,pt=36,pb=32,n=vals.length,bw=(W-pl-pr)/n,mx=Math.max(...vals,1),sm=n>14;
   let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--jz)"/><stop offset="1" style="stop-color:var(--brand-yel)"/></linearGradient></defs>`;
+  for(let i=0;i<=3;i++){const yy=(pt+(H-pt-pb)*i/3).toFixed(1);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-dasharray="${i===3?'0':'3 5'}"/>`}
   vals.forEach((v,k)=>{const h=Math.max(v>0?3:0,(H-pt-pb)*v/mx),x=pl+k*bw+bw*.14,w=bw*.72,y=H-pb-h,on=hi instanceof Set?hi.has(k):k===hi;
     g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${sm?3:6}" fill="${on?`url(#${id})`:'var(--line)'}"/>`;
-    g+=`<text x="${(x+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="${sm?9.5:11}" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:400}">${labels[k]}</text>`;
-    if(v>0&&(!sm||on))g+=`<text x="${(x+w/2).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="${sm?9:10.5}" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:500}">${fmt(v)}</text>`});
+    g+=`<text x="${(x+w/2).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="${sm?10.5:12.5}" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:400}">${labels[k]}</text>`;
+    if(v>0&&(!sm||on))g+=`<text x="${(x+w/2).toFixed(1)}" y="${(y-7).toFixed(1)}" text-anchor="middle" font-size="${sm?10.5:12}" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:500}">${fmt(v)}</text>`});
   return `<svg viewBox="0 0 ${W} ${H}" role="img" style="width:100%;height:auto;display:block">${g}</svg>`}
-function gLine(vals,labels,fmt,id){
-  const W=640,H=210,pl=22,pr=22,pt=30,pb=26,n=vals.length,mx=Math.max(...vals,.0001)*1.18;
+function gLine(vals,labels,fmt,id,W0,H0){
+  const W=W0||640,H=H0||300,pl=26,pr=26,pt=40,pb=32,n=vals.length,mx=Math.max(...vals,.0001)*1.18;
   const x=k=>pl+(W-pl-pr)*(n>1?k/(n-1):.5),y=v=>H-pb-(H-pt-pb)*v/mx;
   const pts=vals.map((v,k)=>[x(k),y(v)]);const ln=pts.map((p,k)=>(k?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
   const ar=ln+` L${x(n-1).toFixed(1)} ${H-pb} L${x(0).toFixed(1)} ${H-pb} Z`;
   let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--jz);stop-opacity:.34"/><stop offset="1" style="stop-color:var(--jz);stop-opacity:0"/></linearGradient></defs>`;
-  g+=`<path d="${ar}" fill="url(#${id})"/><path d="${ln}" fill="none" style="stroke:var(--jz)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
-  pts.forEach((p,k)=>{const last=k===n-1;g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${last?5.5:3.5}" style="fill:${last?'var(--jz)':'var(--panel)'};stroke:var(--jz)" stroke-width="2"/>`;
-    g+=`<text x="${p[0].toFixed(1)}" y="${(p[1]-11).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:500}">${fmt(vals[k])}</text>`;
-    g+=`<text x="${p[0].toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:400}">${labels[k]}</text>`});
+  for(let i=0;i<=3;i++){const yy=(pt+(H-pt-pb)*i/3).toFixed(1);g+=`<line x1="${pl-14}" x2="${W-pr+14}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-dasharray="${i===3?'0':'3 5'}"/>`}
+  g+=`<path d="${ar}" fill="url(#${id})"/><path d="${ln}" fill="none" style="stroke:var(--jz)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  pts.forEach((p,k)=>{const last=k===n-1;g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${last?6.5:4.2}" style="fill:${last?'var(--jz)':'var(--panel)'};stroke:var(--jz)" stroke-width="2.4"/>`;
+    g+=`<text x="${p[0].toFixed(1)}" y="${(p[1]-13).toFixed(1)}" text-anchor="middle" font-size="12" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:500}">${fmt(vals[k])}</text>`;
+    g+=`<text x="${p[0].toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="12.5" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:400}">${labels[k]}</text>`});
   return `<svg viewBox="0 0 ${W} ${H}" role="img" style="width:100%;height:auto;display:block">${g}</svg>`}
 function renderGeral(){
   const el=$('secGeral');if(!el)return;
@@ -1955,7 +1961,7 @@ function renderGeral(){
       kp(cart?pt1(nPos/cart*100)+'%':'–','Cobertura (positivados ÷ carteira de '+int.format(cart)+' no mês)'),
       kp(nPos?pt1(skuM):'–','Média de SKU por PDV no período'),kp(R0(nPos?sellD/nPos:0),'Ticket médio por PDV positivado'),
       ...(mt&&mt.s?[kp(R0(mt.s),'Meta de sell-out do mês',ating(sellD,mt.s))]:[]),...(mt&&mt.p?[kp(int.format(mt.p),'Meta de positivação do mês',ating(nPos,mt.p))]:[])];
-    charts=[['Sell-out Jazam por dia · '+MES[mi],'R$ vendidos, dias escolhidos em destaque',gBars(vS,lab,hi,gMil,'gg1')],
+    charts=[['Sell-out Jazam por dia · '+MES[mi],'R$ vendidos, dias escolhidos em destaque',gBars(vS,lab,hi,gMil,'gg1',1100,300)],
       ['Clientes positivados por dia','clientes distintos que compraram Jazam em cada dia',gBars(vP,lab,hi,v=>String(v),'gg2')],
       ['Média de SKU por PDV por dia','SKUs Jazam distintos por cliente no dia',gBars(vK,lab,hi,v=>pt1(v),'gg3')]];
     const grp=new Map(),mk=()=>({s:0,p:0,sk:0});
@@ -1973,7 +1979,7 @@ function renderGeral(){
       kp(R0(tk),'Ticket médio por PDV positivado',prev>=0?dl(tk,tkP,MES[prev]):''),
       ...(mt&&mt.s?[kp(R0(mt.s),'Meta de sell-out · '+MES[cur],ating(O.sell[cur],mt.s))]:[]),
       ...(mt&&mt.p?[kp(int.format(mt.p),'Meta de positivação · '+MES[cur],ating(O.pos[cur],mt.p))]:[])];
-    charts=[['Sell-out Jazam por mês','R$ vendidos',gBars(O.sell,mm,cur,gMil,'gg1')],
+    charts=[['Sell-out Jazam por mês','R$ vendidos',gBars(O.sell,mm,cur,gMil,'gg1',1100,300)],
       ['Positivação (cobertura da carteira)','% dos clientes ativos que compraram Jazam',gLine(cob,mm,v=>v.toFixed(0)+'%','gg2')],
       ['Média de SKU por PDV','SKUs Jazam distintos por cliente positivado'+(MIX?'':' · sem dados de SKU'),MIX?gBars(skuV,skuL,cur-(M-3),v=>pt1(v),'gg3'):'<div class="empty">Sem dados de SKU carregados.</div>']];
     const mp=por==='sup'?O.sup:O.rca;
@@ -2131,6 +2137,22 @@ document.addEventListener('click',async e=>{
     try{await navigator.share({files:[new File([fotoBlob],'oportunidades-jazam.png',{type:'image/png'})],title:'Oportunidades Jazam'})}catch(err){msg('Não foi possível abrir o compartilhamento.')}return}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('fotoBack')){fotoFechar();e.stopPropagation()}},true);
 
+/* ---------- Roteiro do dia: marca os clientes já positivados com Jazam (vendas diárias do 8281) ---------- */
+let GPOS=null;
+function gPosMap(){
+  if(GPOS)return GPOS;const m=new Map();GPOS=m;
+  if(!(MIX&&MIX.daily))return m;
+  let mx=-1;for(const r of MIX.daily.rows)if(r[0]>mx)mx=r[0];
+  for(const r of MIX.daily.rows){if(r[0]!==mx)continue;const c=String(r[2]);let o=m.get(c);if(!o){o={d:0,v:0,m:mx};m.set(c,o)}o.v+=r[6];if(r[1]>o.d)o.d=r[1]}
+  return m}
+function gPos(c){return gPosMap().get(String(c.code))||null}
+function gPosPill(c){const p=gPos(c);if(!p)return '';
+  return `<span class="pill p-ok" title="Comprou Jazam no 8281: ${esc(R0(p.v))} no mês, última compra em ${p.d}/${p.m+1}">Positivou · ${String(p.d).padStart(2,'0')}/${String(p.m+1).padStart(2,'0')}</span>`}
+function initRotaExtra(){
+  const l=$('fSoOp')&&$('fSoOp').closest('label');if(!l||$('fSoPos'))return;
+  l.insertAdjacentHTML('afterend','<label class="chk"><input type="checkbox" id="fSoPos"> Ocultar já positivados</label>');
+  $('fSoPos').addEventListener('change',e=>{st.ocultaPos=e.target.checked;renderView()})}
+
 function skuBlock(c){
   if(!HUB.sku)return `<div class="callout info"><b>Mix Jazam por produto</b><span>Importe a venda por produto em ↑ Subir dados para ver os itens que o cliente compra e os que faltam.</span></div>`;
   const mine=HUB.sku.byCli.get(c.code)||new Map(),prods=HUB.sku.prods;
@@ -2285,7 +2307,7 @@ const wd=new Date().getDay()+1;st.dia=wd>=2&&wd<=7?wd:2;
 init(raw);
 $('modeMsg').textContent=window.claude?'Conectando para salvar planos e dados do hub…':'Modo local: planos e importações valem só nesta página.';
 
-showSplash();updEquipeBtn();updAtualiz();supaBoot();
+showSplash();updEquipeBtn();updAtualiz();initRotaExtra();supaBoot();
 (async function connect(){
   const cl=window.claude;if(!cl||!cl.use)return;
   try{[DB,USER,ASSETS,DL]=await Promise.all(['db','user','assets','downloads'].map(n=>cl.use(n).catch(()=>null)))}catch(e){}
