@@ -832,10 +832,10 @@ function renderRank(){
   if(st.view==='jazam'){const par=L.base.filter(c=>c.atende&&!perIdx('tri').some(k=>c.jz[k]>0)).length;k[3]=[int.format(par),'Compravam Jazam e pararam no trimestre']}
   const comPlano=L.ranked.filter(x=>PLANO.has(String(x.c.code))).length;k.push([int.format(comPlano),'Com plano de ação']);
   $('kpis').innerHTML=k.map(([v,l])=>`<div class="kpi"><span class="v">${v}</span><span class="l">${esc(l)}</span></div>`).join('');
-  const secH=(st.view==='bomb'||st.view==='bomat'||st.view==='prim')?'Indústrias no período':'Compra total no período';
+  const secH=(st.view==='bomb'||st.view==='bomat'||st.view==='prim')?'Indústrias no período':'Média Jazam por mês com compra';
   /* venda Jazam de cada cliente em todas as abas (na aba Jazam ela já é a métrica principal) */
   const colJz=st.view!=='jazam';
-  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média/mês</th><th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}<th class="r">${secH}</th><th>Plano</th></tr>`;
+  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média/mês</th>${nm>1?'<th>Meses c/ compra</th>':''}<th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}<th class="r">${secH}</th><th>Plano</th></tr>`;
   const show=st.all?L.ranked.slice(0,600):top20;
   $('rBody').innerHTML=show.length?show.map((x,i)=>{const c=x.c,s=jzStatus(c),ri=topRca(c,V.pred);
     return `<tr data-ci="${c.i}" tabindex="0"><td class="pos">${i+1}</td>
@@ -843,9 +843,9 @@ function renderRank(){
     <td class="small">${ri===null?'—':esc(D.rcas[ri])}</td>
     <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}</div></td>
     <td class="r num"><b>${R0(x.v)}</b></td><td class="r num">${R0(x.v/nm)}</td>
-    
+    ${nm>1?`<td><span class="dots" title="${x.months} de ${nm} meses">${ix.map(k=>`<i class="${x.mon[k]>0?'on':''}"></i>`).join('')}</span> <span class="small muted">${x.months}/${nm}</span></td>`:''}
     <td>${spark(x.mon,ix,V.col)}</td>${colJz?`<td class="r num">${jzCell(c,ix)}</td>`:''}<td class="r num">${secCell(c,ix)}</td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td></tr>`}).join('')
-    :`<tr><td colspan="${colJz?10:9}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
+    :`<tr><td colspan="${(colJz?11:10)-(nm>1?0:1)}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
   const extra=L.zero?` · ${int.format(L.zero)} cliente(s) da base sem compra no período ficaram fora do ranking`:'';
   $('rNote').textContent=(st.all?`Mostrando ${int.format(show.length)} de ${int.format(n)}`:`Top ${Math.min(20,n)} de ${int.format(n)}`)+extra+' · a exportação leva todos';
   $('btnAll').textContent=st.all?'Ver só o top 20':'Ver todos';$('btnAll').hidden=n<=20;
@@ -855,7 +855,7 @@ function jzVal(c,ix){const m=monthly(c,isJ);return ix.reduce((a,k)=>a+m[k],0)}
 function jzCell(c,ix){const v=jzVal(c,ix);return v?`<b>${R0(v)}</b>`:'<span class="muted">–</span>'}
 function secCell(c,ix){
   if(st.view==='bomb'||st.view==='bomat'||st.view==='prim')return String(industrias(c,ix));
-  const v=ix.reduce((a,k)=>a+c.tot[k],0);return v?R0(v):'–';
+  const j=c.jz.filter(v=>v>0);return j.length?R0(sum(c.jz)/j.length):'–';
 }
 function industrias(c,ix){return new Set(c.links.filter(l=>ix.some(k=>l.m[k]>0)).map(l=>l.f)).size}
 function scopeLabel(){const cid=st.cid?' · '+cidNome():'';return scopeBase()+cid}
