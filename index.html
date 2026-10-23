@@ -363,6 +363,7 @@ body.spopen{overflow:hidden}
 .hbhome .hbico{background:var(--brand-yel-soft);color:var(--md)}
 .hbhome b{font-family:var(--font-display);font-size:15px;font-weight:600}
 .hbhome small{display:block;font-size:12px;color:var(--muted)}
+.g-ba .hbico{background:var(--ar-soft);color:var(--ar)}
 </style>
 
 <header class="redhead" id="redhead">
@@ -594,10 +595,15 @@ const VIEWS={
     desc:'Clientes que já compram Arcor (31) e/ou Bagley (1010), ordenados pelo valor dessas indústrias no período.'},
   mdlz:{title:'Base Mondelez',pred:isM,base:c=>c.mdYr>0,metric:'Mondelez',status:true,col:'--md',
     desc:'Clientes que já compram Mondelez (86), ordenados pelo valor de Mondelez no período.'},
+  doce:{title:'Sem Jazam e compram doce',pred:f=>isC(f)||isA(f)||isM(f),base:c=>c.links.length>0&&!c.atende&&(c.cyYr+c.arYr+c.mdYr)>0,metric:'Compra de doce',status:false,col:'--cy',
+    desc:'Clientes ativos que não compraram Jazam em 2026 e compram doce de outras indústrias (Cory, Arcor, Bagley ou Mondelez): a melhor chance de primeira venda, ordenados pelo valor de doce que compram no período.'},
+  parado:{title:'Jazam parado',pred:any,base:c=>c.atende&&!perIdx('tri').some(k=>c.jz[k]>0),metric:'Compra total',status:false,col:'--jz',
+    desc:'Clientes que compraram Jazam este ano, mas não compraram nos últimos 3 meses: oportunidade de reativação, ordenados pelo total que compram de todas as indústrias no período.'},
   prim:{title:'Primeira venda Jazam',pred:any,base:c=>c.links.length>0&&!c.atende,metric:'Compra total',status:false,col:'--jz',
     desc:'Todos os clientes ativos que não compraram Jazam em 2026, ordenados pelo total que compram de todas as indústrias: candidatos à primeira venda.'}
 };
-const TABS=[['g','Oportunidades'],['geral','Visão geral','Equipe, RCA e SKU/PDV'],['jazam','Já atendemos com Jazam','Top clientes Jazam'],['bomb','Bombonieres','Atacados de doce'],['bomat','Bombonieres e atacados','Top clientes'],['eqtop','Top 20 por equipe','Compra doce x Jazam'],['cory','Base Cory','Fornecedores 13 e 14'],['arcor','Base Arcor e Bagley','Fornecedores 31 e 1010'],['mdlz','Base Mondelez','Fornecedor 86'],['prim','Primeira venda','Ativos sem Jazam'],
+const TABS=[['g','Oportunidades'],['geral','Visão geral','Equipe, RCA e SKU/PDV'],['doce','Sem Jazam · compram doce','Principal oportunidade'],['prim','Sem Jazam · todos','Ativos que nunca compraram'],['parado','Jazam parado','Compraram e pararam'],['jazam','Já atendemos com Jazam','Top clientes Jazam'],
+  ['g','Bases e listas'],['bomb','Bombonieres','Atacados de doce'],['bomat','Bombonieres e atacados','Top clientes'],['eqtop','Top 20 por equipe','Compra doce x Jazam'],['cory','Base Cory','Fornecedores 13 e 14'],['arcor','Base Arcor e Bagley','Fornecedores 31 e 1010'],['mdlz','Base Mondelez','Fornecedor 86'],
   ['g','Análises'],['vendas','Vendas','Mês atual e período'],['industrias','Indústrias x Jazam','Ranking comparativo'],['cidades','Cidades','Mapa de oportunidades'],['equipes','Comparativo','% da carteira com Jazam'],
   ['g','Ação'],['rota','Roteiro do dia','Rota do RCA'],['plano','Plano de ação','Combinado por cliente'],['metas','Metas','Meta x realizado']];
 const PSTATUS=[['A trabalhar','p-neutral'],['Agendado','p-info'],['Visitado','p-warn'],['Positivou','p-ok'],['Recusou','p-no'],['Sem crédito','p-bad']];
@@ -1479,7 +1485,7 @@ $('btnInAll').addEventListener('click',()=>{st.inAll=!st.inAll;renderView()});
 
 /* ---------- render geral ---------- */
 /* grupos de abas: Oportunidades, Análises e Ação; cada grupo lembra a última aba aberta */
-const GRUPOS=[['op','Oportunidades'],['an','Análises'],['ac','Ação']];
+const GRUPOS=[['op','Oportunidades'],['ba','Bases e listas'],['an','Análises'],['ac','Ação']];
 const GRUPO_DE={};(function(){let g=null;for(const t of TABS){if(t[0]==='g'){g=GRUPOS.find(x=>x[1]===t[1])[0];continue}GRUPO_DE[t[0]]=g}})();
 function renderTabs(){setTimeout(renderHomebar,0);
   st.grp=GRUPO_DE[st.view]||st.grp;st.last[st.grp]=st.view;
@@ -1721,6 +1727,7 @@ async function supaBoot(){
 /* ---------- barra de seções: aparece ao encostar na borda esquerda (ou ao tocar na aba MENU); cada seção abre ao clicar ---------- */
 const HB_ICON={
   op:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',
+  ba:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
   an:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>',
   ac:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12.5 3 3 5-6"/></svg>'};
 const HB_CHEV='<svg class="hbchev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
