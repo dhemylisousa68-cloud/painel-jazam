@@ -364,6 +364,11 @@ body.spopen{overflow:hidden}
 .hbhome b{font-family:var(--font-display);font-size:15px;font-weight:600}
 .hbhome small{display:block;font-size:12px;color:var(--muted)}
 .g-ba .hbico{background:var(--ar-soft);color:var(--ar)}
+/* tabelas das listas: nada fica cortado; títulos quebram em duas linhas e, se faltar espaço, a tabela rola de lado */
+.card{overflow-x:auto;overflow-y:hidden}
+.card table{min-width:0;width:100%}
+.card th{white-space:normal;line-height:1.25;vertical-align:bottom}
+.card th,.card td{padding-left:8px;padding-right:8px}
 </style>
 
 <header class="redhead" id="redhead">
