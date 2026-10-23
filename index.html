@@ -654,11 +654,11 @@ const VIEWS={
     desc:'Clientes que já compram Arcor (31) e/ou Bagley (1010), ordenados pelo valor dessas indústrias no período.'},
   mdlz:{title:'Base Mondelez',pred:isM,base:c=>c.mdYr>0,metric:'Mondelez',status:true,col:'--md',
     desc:'Clientes que já compram Mondelez (86), ordenados pelo valor de Mondelez no período.'},
-  doce:{title:'Sem Jazam e compram doce',pred:f=>{const d=st.doce||{cory:1,arcor:1,mdlz:1};return !!((d.cory&&isC(f))||(d.arcor&&isA(f))||(d.mdlz&&isM(f)))},base:c=>{const d=st.doce||{cory:1,arcor:1,mdlz:1};return c.links.length>0&&!c.atende&&!!((d.cory&&c.cyYr>0)||(d.arcor&&c.arYr>0)||(d.mdlz&&c.mdYr>0))},metric:'Compra de doce',status:false,col:'--cy',
+  doce:{title:'Sem Jazam e compram doce',pred:f=>{const d=st.doce||{cory:1,arcor:1,mdlz:1};return !!((d.cory&&isC(f))||(d.arcor&&isA(f))||(d.mdlz&&isM(f)))},base:c=>{const d=st.doce||{cory:1,arcor:1,mdlz:1};return c.links.length>0&&!atendeAntes(c)&&!!((d.cory&&c.cyYr>0)||(d.arcor&&c.arYr>0)||(d.mdlz&&c.mdYr>0))},metric:'Compra de doce',status:false,col:'--cy',
     desc:'Clientes ativos que não compraram Jazam em 2026 e compram doce de outras indústrias (Cory, Arcor, Bagley ou Mondelez): a melhor chance de primeira venda, ordenados pelo valor de doce que compram no período.'},
-  parado:{title:'Jazam parado',pred:any,base:c=>c.atende&&!perIdx('tri').some(k=>c.jz[k]>0),metric:'Compra total',status:false,col:'--jz',
+  parado:{title:'Jazam parado',pred:any,base:c=>atendeAntes(c)&&!c.jz.slice(Math.max(0,M-3),M-1).some(v=>v>0),metric:'Compra total',status:false,col:'--jz',
     desc:'Clientes que compraram Jazam este ano, mas não compraram nos últimos 3 meses: oportunidade de reativação, ordenados pelo total que compram de todas as indústrias no período.'},
-  prim:{title:'Primeira venda Jazam',pred:any,base:c=>c.links.length>0&&!c.atende,metric:'Compra total',status:false,col:'--jz',
+  prim:{title:'Primeira venda Jazam',pred:any,base:c=>c.links.length>0&&!atendeAntes(c),metric:'Compra total',status:false,col:'--jz',
     desc:'Todos os clientes ativos que não compraram Jazam em 2026, ordenados pelo total que compram de todas as indústrias: candidatos à primeira venda.'}
 };
 const TABS=[['g','Visão geral'],['geral','Visão geral','Equipe, RCA e SKU/PDV'],
@@ -845,22 +845,22 @@ function renderRank(){
   const tot=sum(L.ranked.map(x=>x.v)),n=L.ranked.length,nm=ix.length,top20=L.ranked.slice(0,20),t20=sum(top20.map(x=>x.v));
   const k=[[int.format(n),'Clientes com compra no período'],[R0(tot),V.metric+' · '+perLabel(st.per,true)],[R0(n?tot/n/nm:0),'Média mensal por cliente'],[tot?Math.round(t20/tot*100)+'%':'–','Peso do top 20 no total']];
   if(st.view==='jazam'){const par=L.base.filter(c=>c.atende&&!perIdx('tri').some(k=>c.jz[k]>0)).length;k[3]=[int.format(par),'Compravam Jazam e pararam no trimestre']}
-  const comPlano=L.ranked.filter(x=>PLANO.has(String(x.c.code))).length;k.push([int.format(comPlano),'Com plano de ação']);
+  const comPlano=L.ranked.filter(x=>PLANO.has(String(x.c.code))).length;k.push([int.format(comPlano),'Com plano de ação']);if(st.view==='doce'||st.view==='prim'||st.view==='parado')k.push([int.format(L.ranked.filter(x=>x.c.jz[M-1]>0).length),'Já positivados com Jazam em '+MES[M-1]]);
   $('kpis').innerHTML=k.map(([v,l])=>`<div class="kpi"><span class="v">${v}</span><span class="l">${esc(l)}</span></div>`).join('');
   const secH=(st.view==='bomb'||st.view==='bomat'||st.view==='prim')?'Indústrias no período':'Média Jazam por mês com compra';
   /* venda Jazam de cada cliente em todas as abas (na aba Jazam ela já é a métrica principal) */
-  const colJz=st.view!=='jazam';
-  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média/mês (trim.)</th>${nm>1?'<th>Meses c/ compra</th>':''}<th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}<th class="r">${secH}</th><th>Plano</th></tr>`;
+  const colJz=st.view!=='jazam',indCol=(st.view==='bomb'||st.view==='bomat'||st.view==='prim');
+  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média Jazam/mês (trim.)</th>${nm>1?'<th>Meses c/ compra</th>':''}<th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}${indCol?`<th class="r">${secH}</th>`:''}<th>Plano</th></tr>`;
   const show=st.all?L.ranked.slice(0,600):top20;
-  $('rBody').innerHTML=show.length?show.map((x,i)=>{const c=x.c,s=jzStatus(c),ri=topRca(c,V.pred);
+  $('rBody').innerHTML=show.length?show.map((x,i)=>{const c=x.c,s=gStatusLista(c),ri=topRca(c,V.pred);
     return `<tr data-ci="${c.i}" tabindex="0"><td class="pos">${i+1}</td>
     <td class="cli"><b>${esc(c.name)}</b><small>${c.code} · ${esc(c.city)} · ${esc(c.ramo)}</small></td>
     <td class="small">${ri===null?'—':esc(D.rcas[ri])}</td>
     <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}</div></td>
-    <td class="r num"><b>${R0(x.v)}</b></td><td class="r num">${R0(perIdx('tri').reduce((a,k)=>a+x.mon[k],0)/3)}</td>
+    <td class="r num"><b>${R0(x.v)}</b></td><td class="r num">${gMediaJz(c)}</td>
     ${nm>1?`<td><span class="dots" title="${x.months} de ${nm} meses">${ix.map(k=>`<i class="${x.mon[k]>0?'on':''}"></i>`).join('')}</span> <span class="small muted">${x.months}/${nm}</span></td>`:''}
-    <td>${spark(x.mon,ix,V.col)}</td>${colJz?`<td class="r num">${jzCell(c,ix)}</td>`:''}<td class="r num">${secCell(c,ix)}</td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td></tr>`}).join('')
-    :`<tr><td colspan="${(colJz?11:10)-(nm>1?0:1)}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
+    <td>${spark(x.mon,ix,V.col)}</td>${colJz?`<td class="r num">${jzCell(c,ix)}</td>`:''}${indCol?`<td class="r num">${secCell(c,ix)}</td>`:''}<td>${planoPill(c)||'<span class="muted small">—</span>'}</td></tr>`}).join('')
+    :`<tr><td colspan="${(colJz?11:10)-(nm>1?0:1)-(indCol?0:1)}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
   const extra=L.zero?` · ${int.format(L.zero)} cliente(s) da base sem compra no período ficaram fora do ranking`:'';
   $('rNote').textContent=(st.all?`Mostrando ${int.format(show.length)} de ${int.format(n)}`:`Top ${Math.min(20,n)} de ${int.format(n)}`)+extra+' · a exportação leva todos';
   $('btnAll').textContent=st.all?'Ver só o top 20':'Ver todos';$('btnAll').hidden=n<=20;
@@ -2084,7 +2084,7 @@ function fotoCanvas(){
   const esc0=(scopeBase()||'').replace(/^\s*·\s*/,'')||'Todas as equipes';
   ctx.font='400 12.5px '+F;ctx.fillText(fotoFit(ctx,[esc0,perLabel(st.per),'Top '+rows.length+' de '+int.format(L.ranked.length)].join('  ·  '),W-2*pad),pad,79);
   for(let x=0,i=0;x<W;x+=56,i++){ctx.fillStyle=i%2?'#FDCD09':'#B3151B';ctx.fillRect(x,hdr-4,Math.min(56,W-x),4)}
-  const cols=[['#',26,'l'],['Cliente',318,'l'],['RCA',150,'l'],['Últ. compra Jazam',126,'l'],[V.metric+' '+perLabel(st.per,true),104,'r'],['Média/mês (trim.)',104,'r'],['Venda Jazam',88,'r']];
+  const cols=[['#',26,'l'],['Cliente',298,'l'],['RCA',140,'l'],['Últ. compra Jazam',126,'l'],[V.metric+' '+perLabel(st.per,true),104,'r'],['Média Jazam/mês (trim.)',134,'r'],['Venda Jazam',88,'r']];
   const gap=6;let xs=[],x=pad;for(const c of cols){xs.push(x);x+=c[1]+gap}
   const y0=hdr;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,y0,W,th);
   ctx.fillStyle='#6F6668';ctx.font='700 9.5px '+F;
@@ -2105,7 +2105,7 @@ function fotoCanvas(){
     ctx.fillStyle=c.jzLast<0?'#6F6668':(c.jzLast>=M-1?'#2E8550':'#B26A00');ctx.font='700 11.5px '+F;ctx.fillText(fotoFit(ctx,ult,cols[3][1]),xs[3],y+23);
     const rt=(t,col,f,color)=>{ctx.fillStyle=color;ctx.font=f;const w=ctx.measureText(t).width;ctx.fillText(t,xs[col]+cols[col][1]-w,y+23)};
     rt(R0(r.v),4,'700 12.5px '+F,'#26201F');
-    rt(R0(perIdx('tri').reduce((a,k)=>a+r.mon[k],0)/3),5,'400 12px '+F,'#6F6668');
+    const mj=perIdx('tri').reduce((a,k)=>a+c.jz[k],0)/3;rt(mj?R0(mj):'–',5,'400 12px '+F,'#6F6668');
     const jv=jzVal(c,ix);rt(jv?R0(jv):'–',6,(jv?'700 ':'400 ')+'12px '+F,jv?'#D41E25':'#6F6668')});
   const fy=y0+th+rows.length*rh;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,fy,W,foot);
   ctx.fillStyle='#6F6668';ctx.font='400 10.5px '+F;const d=new Date();ctx.fillText('Gerado em '+d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),pad,fy+20);
@@ -2152,6 +2152,14 @@ function initRotaExtra(){
   const l=$('fSoOp')&&$('fSoOp').closest('label');if(!l||$('fSoPos'))return;
   l.insertAdjacentHTML('afterend','<label class="chk"><input type="checkbox" id="fSoPos"> Ocultar já positivados</label>');
   $('fSoPos').addEventListener('change',e=>{st.ocultaPos=e.target.checked;renderView()})}
+/* listas de oportunidade (sem Jazam, compram doce, Jazam parado): quem compra Jazam no mês continua na mesma posição, só muda a situação para positivado */
+function atendeAntes(c){for(let k=0;k<M-1;k++)if(c.jz[k]>0)return true;return false}
+function gStatusLista(c){
+  if((st.view==='doce'||st.view==='prim'||st.view==='parado')&&c.jz[M-1]>0){const p=gPos(c);
+    return {cls:'p-ok',txt:p?('Positivou · '+String(p.d).padStart(2,'0')+'/'+String(p.m+1).padStart(2,'0')):('Positivado em '+MES[M-1])}}
+  return jzStatus(c)}
+/* média mensal de Jazam do cliente nos últimos 3 meses */
+function gMediaJz(c){const v=perIdx('tri').reduce((a,k)=>a+c.jz[k],0)/3;return v?R0(v):'–'}
 
 function skuBlock(c){
   if(!HUB.sku)return `<div class="callout info"><b>Mix Jazam por produto</b><span>Importe a venda por produto em ↑ Subir dados para ver os itens que o cliente compra e os que faltam.</span></div>`;
