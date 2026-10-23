@@ -401,6 +401,14 @@ body.vgeral .field:has(#fDir),body.vgeral .field:has(#fGer),body.vgeral .field:h
 .cald.on::after{background:#fff}
 /* na Visão geral o período é só o calendário */
 body.vgeral #fPer button[data-p]{display:none}
+/* Foto da lista para o WhatsApp */
+.fotoback{position:fixed;inset:0;z-index:70;background:rgba(20,15,17,.58);display:grid;place-items:center;padding:16px}
+.fotomodal{background:var(--panel);border-radius:16px;width:min(1040px,96vw);max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow)}
+.fotohead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.fotohead b{font-family:var(--font-display);font-size:17px}
+.fotobody{overflow:auto;padding:14px;background:var(--soft);display:grid;place-items:start center}
+.fotobody img{max-width:100%;height:auto;border-radius:8px;box-shadow:0 6px 24px rgba(31,26,28,.18);background:#fff}
+.fotoact{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
 </style>
 
 <header class="redhead" id="redhead">
@@ -452,7 +460,7 @@ body.vgeral #fPer button[data-p]{display:none}
   <section id="secRank" class="vsec" style="display:grid;gap:14px">
     <div class="viewhead">
       <div><h2 id="vTitle">—</h2><p id="vDesc"></p></div>
-      <div class="actions"><div class="seg" id="fTipo" aria-label="Tipo de cliente" hidden></div><div class="seg" id="fStatus" aria-label="Situação Jazam"></div><button class="btn" type="button" id="btnBombMapa" hidden>Ver onde ficam no mapa</button><button class="btn" type="button" data-export="rank">Exportar para Excel</button></div>
+      <div class="actions"><div class="seg" id="fTipo" aria-label="Tipo de cliente" hidden></div><div class="seg" id="fStatus" aria-label="Situação Jazam"></div><button class="btn" type="button" id="btnBombMapa" hidden>Ver onde ficam no mapa</button><button class="btn pri" type="button" data-foto>Foto para WhatsApp</button><button class="btn" type="button" data-export="rank">Exportar para Excel</button></div>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="card clickrows">
@@ -2033,6 +2041,73 @@ document.addEventListener('click',e=>{
   const pr=e.target.closest('[data-calp]');if(pr){st.per=pr.dataset.calp;st.pdias=null;calClose();st.all=false;renderAll();return}
   if($('calPop')&&!e.target.closest('#calPop'))calClose()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('calPop')){calClose();e.stopPropagation()}},true);
+
+/* ---------- foto da lista de oportunidades (top 20, estilo planilha) para mandar no WhatsApp ---------- */
+function fotoFit(ctx,t,w){t=String(t==null?'':t);if(ctx.measureText(t).width<=w)return t;while(t.length>1&&ctx.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
+function fotoRR(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function fotoCanvas(){
+  const L=LAST.rank;if(!L||!L.ranked.length)return null;
+  const V=VIEWS[st.view],ix=perIdx(st.per),nm=ix.length,rows=L.ranked.slice(0,20);
+  const S=2,W=1140,pad=28,hdr=122,th=40,rh=52,foot=46,H=hdr+th+rows.length*rh+foot;
+  const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;const ctx=cv.getContext('2d');ctx.scale(S,S);
+  const F='"IBM Plex Sans","Segoe UI",Arial,sans-serif',FD='"Bricolage Grotesque","Segoe UI",Arial,sans-serif';
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.textBaseline='alphabetic';
+  const g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,'#F2292F');g.addColorStop(1,'#D31B24');ctx.fillStyle=g;ctx.fillRect(0,0,W,hdr);
+  ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.font='600 12px '+F;ctx.fillText('CABRAL & SOUSA · JAZAM · FORNECEDOR 49',pad,34);ctx.globalAlpha=1;
+  ctx.font='700 29px '+FD;ctx.fillText(fotoFit(ctx,V.title,W-2*pad),pad,72);
+  const esc0=(scopeBase()||'').replace(/^\s*·\s*/,'')||'Todas as equipes';
+  ctx.font='400 14px '+F;ctx.fillText(fotoFit(ctx,[esc0,perLabel(st.per),'Top '+rows.length+' de '+int.format(L.ranked.length)+' clientes'].join('   ·   '),W-2*pad),pad,100);
+  for(let x=0,i=0;x<W;x+=64,i++){ctx.fillStyle=i%2?'#FDCD09':'#B3151B';ctx.fillRect(x,hdr-5,Math.min(64,W-x),5)}
+  const cols=[['#',30,'l'],['Cliente',318,'l'],['RCA',172,'l'],['Situação',152,'l'],[V.metric+' '+perLabel(st.per,true),118,'r'],['Média/mês',92,'r'],['Meses',54,'c'],['Venda Jazam',108,'r']];
+  const gap=8;let xs=[],x=pad;for(const c of cols){xs.push(x);x+=c[1]+gap}
+  const y0=hdr;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,y0,W,th);
+  ctx.fillStyle='#6F6668';ctx.font='700 10.5px '+F;
+  cols.forEach((c,i)=>{const t=fotoFit(ctx,c[0].toUpperCase(),c[1]);const w=ctx.measureText(t).width;const tx=c[2]==='r'?xs[i]+c[1]-w:c[2]==='c'?xs[i]+(c[1]-w)/2:xs[i];ctx.fillText(t,tx,y0+25)});
+  const PIL={'p-no':['#FDE7E7','#D41E25'],'p-warn':['#FDF0DA','#B26A00'],'p-ok':['#E4F4EA','#2E8550']};
+  rows.forEach((r,i)=>{
+    const c=r.c,s=jzStatus(c),ri=topRca(c,V.pred),y=y0+th+i*rh;
+    if(i%2){ctx.fillStyle='#FBFAF9';ctx.fillRect(0,y,W,rh)}
+    ctx.fillStyle='#E9E4E5';ctx.fillRect(0,y+rh-1,W,1);
+    ctx.fillStyle='#6F6668';ctx.font='700 15px '+FD;ctx.fillText(String(i+1),xs[0],y+31);
+    ctx.fillStyle='#26201F';ctx.font='600 14px '+F;ctx.fillText(fotoFit(ctx,c.name,cols[1][1]),xs[1],y+22);
+    ctx.fillStyle='#6F6668';ctx.font='400 11.5px '+F;ctx.fillText(fotoFit(ctx,c.code+' · '+c.city+' · '+c.ramo,cols[1][1]),xs[1],y+39);
+    ctx.fillStyle='#26201F';ctx.font='400 12.5px '+F;const rn=ri===null?'—':String(D.rcas[ri]).replace(/ - DIST EXPRESS$/i,'');
+    const p=rn.split(' ');const l1=p.slice(0,2).join(' '),l2=p.slice(2,4).join(' ');ctx.fillText(fotoFit(ctx,l1,cols[2][1]),xs[2],l2?y+22:y+31);if(l2){ctx.fillStyle='#6F6668';ctx.fillText(fotoFit(ctx,l2,cols[2][1]),xs[2],y+39)}
+    const pc=PIL[s.cls]||PIL['p-ok'];ctx.font='700 11.5px '+F;const st1=fotoFit(ctx,s.txt,cols[3][1]-16),pw=ctx.measureText(st1).width+16;
+    ctx.fillStyle=pc[0];fotoRR(ctx,xs[3],y+14,pw,24,12);ctx.fill();ctx.fillStyle=pc[1];ctx.fillText(st1,xs[3]+8,y+30);
+    ctx.fillStyle='#26201F';ctx.font='700 13.5px '+F;const rt=(t,col,f)=>{ctx.font=f;const w=ctx.measureText(t).width;ctx.fillText(t,xs[col]+cols[col][1]-w,y+31)};
+    rt(R0(r.v),4,'700 13.5px '+F);ctx.fillStyle='#6F6668';rt(R0(r.v/nm),5,'400 13px '+F);
+    ctx.fillStyle='#26201F';ctx.font='400 13px '+F;const mt=r.months+'/'+nm,mw=ctx.measureText(mt).width;ctx.fillText(mt,xs[6]+(cols[6][1]-mw)/2,y+31);
+    const jv=jzVal(c,ix);ctx.fillStyle=jv?'#D41E25':'#6F6668';rt(jv?R0(jv):'–',7,(jv?'700 ':'400 ')+'13px '+F)});
+  const fy=y0+th+rows.length*rh;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,fy,W,foot);
+  ctx.fillStyle='#6F6668';ctx.font='400 11.5px '+F;const d=new Date();ctx.fillText('Gerado em '+d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),pad,fy+27);
+  const rtx='Painel Oportunidades Jazam';ctx.font='600 11.5px '+F;ctx.fillText(rtx,W-pad-ctx.measureText(rtx).width,fy+27);
+  return cv}
+let fotoUrl=null,fotoBlob=null;
+function fotoFechar(){const m=$('fotoBack');if(m)m.remove();if(fotoUrl){URL.revokeObjectURL(fotoUrl);fotoUrl=null}fotoBlob=null}
+function fotoAbrir(){
+  const cv=fotoCanvas();if(!cv){toast('Não há clientes na lista para gerar a foto.');return}
+  cv.toBlob(b=>{
+    if(!b){toast('Não consegui gerar a imagem.');return}
+    fotoFechar();fotoBlob=b;fotoUrl=URL.createObjectURL(b);
+    const can=!!(navigator.canShare&&navigator.canShare({files:[new File([b],'oportunidades.png',{type:'image/png'})]}));
+    const el=document.createElement('div');el.id='fotoBack';el.className='fotoback';
+    el.innerHTML=`<div class="fotomodal" role="dialog" aria-label="Foto da lista"><div class="fotohead"><div><b>Foto da lista para o WhatsApp</b><div class="small muted">Top 20 do filtro atual, em formato de planilha</div></div><button class="close" type="button" data-fotox aria-label="Fechar">×</button></div>
+      <div class="fotobody"><img src="${fotoUrl}" alt="Top 20 clientes de oportunidade"></div>
+      <div class="fotoact"><button class="btn pri" type="button" data-fotocopy>Copiar imagem</button>${can?'<button class="btn" type="button" data-fotosh>Enviar / compartilhar</button>':''}<button class="btn" type="button" data-fotodl>Baixar PNG</button><span class="small muted" id="fotoMsg">Copie e cole no WhatsApp, ou toque e segure na imagem para salvar.</span></div></div>`;
+    document.body.appendChild(el)},'image/png')}
+document.addEventListener('click',async e=>{
+  if(e.target.closest('[data-foto]')){fotoAbrir();return}
+  if(e.target.closest('[data-fotox]')||e.target.id==='fotoBack'){fotoFechar();return}
+  const msg=t=>{const m=$('fotoMsg');if(m)m.textContent=t};
+  if(e.target.closest('[data-fotocopy]')){
+    try{await navigator.clipboard.write([new ClipboardItem({'image/png':fotoBlob})]);msg('Imagem copiada. Cole na conversa do WhatsApp (Ctrl+V).')}
+    catch(err){msg('Seu navegador não deixou copiar. Clique com o botão direito na imagem e escolha Copiar imagem, ou use Baixar PNG.')}return}
+  if(e.target.closest('[data-fotodl]')){
+    const a=document.createElement('a');a.href=fotoUrl;a.download='oportunidades-jazam-'+new Date().toISOString().slice(0,10)+'.png';document.body.appendChild(a);a.click();a.remove();msg('Se o download não começou, clique com o botão direito na imagem e salve.');return}
+  if(e.target.closest('[data-fotosh]')){
+    try{await navigator.share({files:[new File([fotoBlob],'oportunidades-jazam.png',{type:'image/png'})],title:'Oportunidades Jazam'})}catch(err){msg('Não foi possível abrir o compartilhamento.')}return}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('fotoBack')){fotoFechar();e.stopPropagation()}},true);
 
 function skuBlock(c){
   if(!HUB.sku)return `<div class="callout info"><b>Mix Jazam por produto</b><span>Importe a venda por produto em ↑ Subir dados para ver os itens que o cliente compra e os que faltam.</span></div>`;
