@@ -344,6 +344,25 @@ body.spopen{overflow:hidden}
 .fsbtn:hover{background:rgba(255,255,255,.14)}
 .hbhead{background:linear-gradient(135deg,#F2292F,#E8212A 55%,#D31B24)}
 .hbhead .eyebrow{color:#fff;opacity:.9}
+/* Visão geral */
+.ggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+.gcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:grid;gap:12px;align-content:start;min-width:0}
+.gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px 14px;flex-wrap:wrap}
+.gh h3{font-size:16px}
+.gtbl{min-width:760px}
+.gtbl tbody tr{cursor:pointer}
+.gtbl tbody tr:hover td{background:var(--soft)}
+.gtbl tbody tr.sel td{background:var(--brand-yel-soft)}
+.gnm{font-weight:600;min-width:200px}
+.gbar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin-bottom:4px;min-width:90px}
+.gbar i{display:block;height:100%;background:linear-gradient(90deg,var(--jz),var(--brand-yel));border-radius:5px}
+.gbar.ok i{background:linear-gradient(90deg,var(--ok),#8CD3A6)}
+.hbhome{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:center;width:100%;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 14px;cursor:pointer;text-align:left;color:var(--ink)}
+.hbhome:hover{background:var(--soft)}
+.hbhome.on{border-color:var(--brand-red);box-shadow:0 8px 24px rgba(31,26,28,.10)}
+.hbhome .hbico{background:var(--brand-yel-soft);color:var(--md)}
+.hbhome b{font-family:var(--font-display);font-size:15px;font-weight:600}
+.hbhome small{display:block;font-size:12px;color:var(--muted)}
 </style>
 
 <header class="redhead" id="redhead">
@@ -391,6 +410,7 @@ body.spopen{overflow:hidden}
     <div class="tabs" role="tablist" id="tabs"></div>
   </div>
 
+<section id="secGeral" class="vsec" style="display:grid;gap:14px" hidden></section>
   <section id="secRank" class="vsec" style="display:grid;gap:14px">
     <div class="viewhead">
       <div><h2 id="vTitle">—</h2><p id="vDesc"></p></div>
@@ -577,7 +597,7 @@ const VIEWS={
   prim:{title:'Primeira venda Jazam',pred:any,base:c=>c.links.length>0&&!c.atende,metric:'Compra total',status:false,col:'--jz',
     desc:'Todos os clientes ativos que não compraram Jazam em 2026, ordenados pelo total que compram de todas as indústrias: candidatos à primeira venda.'}
 };
-const TABS=[['g','Oportunidades'],['jazam','Já atendemos com Jazam','Top clientes Jazam'],['bomb','Bombonieres','Atacados de doce'],['bomat','Bombonieres e atacados','Top clientes'],['eqtop','Top 20 por equipe','Compra doce x Jazam'],['cory','Base Cory','Fornecedores 13 e 14'],['arcor','Base Arcor e Bagley','Fornecedores 31 e 1010'],['mdlz','Base Mondelez','Fornecedor 86'],['prim','Primeira venda','Ativos sem Jazam'],
+const TABS=[['g','Oportunidades'],['geral','Visão geral','Equipe, RCA e SKU/PDV'],['jazam','Já atendemos com Jazam','Top clientes Jazam'],['bomb','Bombonieres','Atacados de doce'],['bomat','Bombonieres e atacados','Top clientes'],['eqtop','Top 20 por equipe','Compra doce x Jazam'],['cory','Base Cory','Fornecedores 13 e 14'],['arcor','Base Arcor e Bagley','Fornecedores 31 e 1010'],['mdlz','Base Mondelez','Fornecedor 86'],['prim','Primeira venda','Ativos sem Jazam'],
   ['g','Análises'],['vendas','Vendas','Mês atual e período'],['industrias','Indústrias x Jazam','Ranking comparativo'],['cidades','Cidades','Mapa de oportunidades'],['equipes','Comparativo','% da carteira com Jazam'],
   ['g','Ação'],['rota','Roteiro do dia','Rota do RCA'],['plano','Plano de ação','Combinado por cliente'],['metas','Metas','Meta x realizado']];
 const PSTATUS=[['A trabalhar','p-neutral'],['Agendado','p-info'],['Visitado','p-warn'],['Positivou','p-ok'],['Recusou','p-no'],['Sem crédito','p-bad']];
@@ -1469,9 +1489,9 @@ function renderTabs(){setTimeout(renderHomebar,0);
 function renderPer(){$('fPer').innerHTML=['mes','tri','sem','ano'].map(p=>`<button type="button" data-p="${p}" aria-pressed="${st.per===p}">${perLabel(p)}</button>`).join('')}
 function renderView(){
   renderTabs();
-  const sec={rota:'secRota',plano:'secPlano',metas:'secMetas',cidades:'secCidades',equipes:'secEquipes',eqtop:'secEqTop',vendas:'secVendas',industrias:'secInd'}[st.view]||'secRank';
+  const sec={rota:'secRota',plano:'secPlano',metas:'secMetas',cidades:'secCidades',equipes:'secEquipes',eqtop:'secEqTop',vendas:'secVendas',industrias:'secInd',geral:'secGeral'}[st.view]||'secRank';
   document.querySelectorAll('.vsec').forEach(s=>s.hidden=s.id!==sec);
-  if(sec==='secInd')renderInd();else
+  if(sec==='secGeral')renderGeral();else if(sec==='secInd')renderInd();else
   if(sec==='secVendas')renderVendas();else
   if(sec==='secEqTop')renderEqTop();else
   if(sec==='secCidades')renderCidades();else if(sec==='secEquipes')renderEquipes();else
@@ -1709,8 +1729,8 @@ function renderHomebar(){
   const p=$('hbPanel');if(!p)return;
   const nomeAtual=(TABS.find(t=>t[0]===st.view)||[])[1]||'';
   p.innerHTML=`<div class="hbhead"><span class="eyebrow">Cabral &amp; Sousa · Jazam</span><b>Oportunidades Jazam</b></div><div class="hbbar"></div>
-    <div class="hbbody">${GRUPOS.map(([k,n])=>{
-      const itens=TABS.filter(t=>t[0]!=='g'&&GRUPO_DE[t[0]]===k),on=st.grp===k,open=hbOpen===k;
+    <div class="hbbody"><button type="button" class="hbhome${st.view==='geral'?' on':''}" data-hbv="geral"><span class="hbico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg></span><span><b>Visão geral</b><small>Positivação, sell-out e SKU/PDV</small></span></button>${GRUPOS.map(([k,n])=>{
+      const itens=TABS.filter(t=>t[0]!=='g'&&t[0]!=='geral'&&GRUPO_DE[t[0]]===k),on=st.grp===k&&st.view!=='geral',open=hbOpen===k;
       return `<section class="hbsec g-${k}${on?' on':''}${open?' open':''}"><div class="hbgh"><button type="button" class="hbgo" data-hbs="${k}" title="Ir para ${esc(n)}"><span class="hbico">${HB_ICON[k]||''}</span><span class="hbtx"><b>${esc(n)}</b><small>${on&&nomeAtual?esc(nomeAtual):itens.length+' abas'}</small></span></button><button type="button" class="hbtg" data-hbg="${k}" aria-expanded="${open}" aria-label="${open?'Recolher':'Mostrar'} as abas de ${esc(n)}">${HB_CHEV}</button></div>
         ${open?`<div class="hbitems">${itens.map(t=>`<button type="button" class="hbitem" data-hbv="${t[0]}" aria-current="${st.view===t[0]}"><b>${esc(t[1])}</b><span>${esc(t[2]||'')}</span></button>`).join('')}</div>`:''}</section>`}).join('')}</div>`;
 }
@@ -1760,9 +1780,97 @@ document.addEventListener('click',e=>{
   st.ger=g;st.dir=t?dirOf(t.si):'';st.sup='';st.rca='';st.all=false;gerLock=g;
   try{localStorage.setItem('painelJazamEquipe',g)}catch(err){}
   const s=$('splash');if(s)s.remove();document.body.classList.remove('spopen');
+  st.view='geral';st.grp=GRUPO_DE.geral||st.grp;
   renderFilters();applyGerLock();renderAll();updEquipeBtn();window.scrollTo(0,0);
   /* depois de escolher a equipe, o menu de seções abre sozinho, com a seção atual aberta */
   const hb=$('homebar');if(hb){hbOpen=st.grp;renderHomebar();hb.classList.remove('hbhide');hb.classList.add('open');const hh=hb.querySelector('.hbhandle');if(hh)hh.setAttribute('aria-expanded','true')}});
+
+/* ---------- Visão geral: positivação, sell-out e SKU/PDV da equipe, com ranking por RCA e por supervisão ---------- */
+function gMil(v){return v>=1000?(v/1000).toFixed(v>=10000?0:1).replace('.',',')+' mil':String(Math.round(v))}
+function gDados(){
+  const O={cart:Array(M).fill(0),pos:Array(M).fill(0),sell:Array(M).fill(0),sku:[0,0,0],skuN:[0,0,0],rca:new Map(),sup:new Map()};
+  const mk=()=>({sell:Array(M).fill(0),pos:Array(M).fill(0),cart:Array(M).fill(0),sku:[0,0,0],skuN:[0,0,0]});
+  const get=(mp,k)=>{let o=mp.get(k);if(!o){o=mk();mp.set(k,o)}return o};
+  for(const c of CODE2C.values()){
+    if(!cidOk(c))continue;const ls=c.links.filter(linkOk);if(!ls.length)continue;
+    for(const l of ls)if(isJ(l.f))for(let k=0;k<M;k++){const v=l.m[k]||0;if(v){get(O.rca,l.ri).sell[k]+=v;get(O.sup,l.si).sell[k]+=v;O.sell[k]+=v}}
+    for(let k=0;k<M;k++){
+      let tot=0,jz=0,best=null,bv=-1;
+      for(const l of ls){const v=l.m[k]||0;tot+=v;if(isJ(l.f))jz+=v;if(v>bv){bv=v;best=l}}
+      if(tot<=0)continue;
+      O.cart[k]++;const a=get(O.rca,best.ri),b=get(O.sup,best.si);a.cart[k]++;b.cart[k]++;
+      if(jz>0){O.pos[k]++;a.pos[k]++;b.pos[k]++}}
+  }
+  if(MIX)for(const cod in MIX.cli){
+    const c=CODE2C.get(+cod);if(!c||!cidOk(c))continue;const ls=c.links.filter(linkOk);if(!ls.length)continue;
+    const it=MIX.cli[cod],n=[0,0,0];for(const p in it)for(let m=0;m<3;m++)if(it[p][m]>0)n[m]++;
+    let best=ls[0],bv=-1;for(const l of ls){const v=sum(l.m);if(v>bv){bv=v;best=l}}
+    const a=get(O.rca,best.ri),b=get(O.sup,best.si);
+    for(let m=0;m<3;m++)if(n[m]>0){O.sku[m]+=n[m];O.skuN[m]++;a.sku[m]+=n[m];a.skuN[m]++;b.sku[m]+=n[m];b.skuN[m]++}}
+  return O}
+function gBars(vals,labels,hi,fmt,id){
+  const W=640,H=210,pl=8,pr=8,pt=28,pb=26,n=vals.length,bw=(W-pl-pr)/n,mx=Math.max(...vals,1);
+  let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--jz)"/><stop offset="1" style="stop-color:var(--brand-yel)"/></linearGradient></defs>`;
+  vals.forEach((v,k)=>{const h=Math.max(v>0?3:0,(H-pt-pb)*v/mx),x=pl+k*bw+bw*.16,w=bw*.68,y=H-pb-h,on=k===hi;
+    g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="6" fill="${on?`url(#${id})`:'var(--line)'}"/>`;
+    g+=`<text x="${(x+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:400}">${labels[k]}</text>`;
+    if(v>0)g+=`<text x="${(x+w/2).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${on?'var(--ink)':'var(--muted)'}" font-weight="${on?700:500}">${fmt(v)}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" style="width:100%;height:auto;display:block">${g}</svg>`}
+function gLine(vals,labels,fmt,id){
+  const W=640,H=210,pl=22,pr=22,pt=30,pb=26,n=vals.length,mx=Math.max(...vals,.0001)*1.18;
+  const x=k=>pl+(W-pl-pr)*(n>1?k/(n-1):.5),y=v=>H-pb-(H-pt-pb)*v/mx;
+  const pts=vals.map((v,k)=>[x(k),y(v)]);const ln=pts.map((p,k)=>(k?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const ar=ln+` L${x(n-1).toFixed(1)} ${H-pb} L${x(0).toFixed(1)} ${H-pb} Z`;
+  let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--jz);stop-opacity:.34"/><stop offset="1" style="stop-color:var(--jz);stop-opacity:0"/></linearGradient></defs>`;
+  g+=`<path d="${ar}" fill="url(#${id})"/><path d="${ln}" fill="none" style="stroke:var(--jz)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  pts.forEach((p,k)=>{const last=k===n-1;g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${last?5.5:3.5}" style="fill:${last?'var(--jz)':'var(--panel)'};stroke:var(--jz)" stroke-width="2"/>`;
+    g+=`<text x="${p[0].toFixed(1)}" y="${(p[1]-11).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:500}">${fmt(vals[k])}</text>`;
+    g+=`<text x="${p[0].toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" fill="${last?'var(--ink)':'var(--muted)'}" font-weight="${last?700:400}">${labels[k]}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" style="width:100%;height:auto;display:block">${g}</svg>`}
+function renderGeral(){
+  const el=$('secGeral');if(!el)return;
+  const O=gDados(),cur=M-1,prev=M-2,mm=MES.slice(0,M);
+  const cob=O.cart.map((c,k)=>c?O.pos[k]/c*100:0);
+  const skuV=[0,1,2].map(m=>O.skuN[m]?O.sku[m]/O.skuN[m]:0),skuL=[MES[M-3],MES[M-2],MES[M-1]];
+  const dl=(a,b,suf)=>{if(!b)return '';const p=(a-b)/b*100;return `<span class="dl ${p>=0?'up':'dn'}">${p>=0?'▲':'▼'} ${Math.abs(p).toFixed(0)}% vs ${suf}</span>`};
+  const dpp=(a,b)=>{const d=a-b;return `<span class="dl ${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1).replace('.',',')} p.p. vs ${MES[prev]}</span>`};
+  const tk=O.pos[cur]?O.sell[cur]/O.pos[cur]:0,tkP=O.pos[prev]?O.sell[prev]/O.pos[prev]:0;
+  const kp=(v,l,d)=>`<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span>${d||''}</div>`;
+  const kpis=[kp(R0(O.sell[cur]),'Sell-out Jazam · '+MES[cur],dl(O.sell[cur],O.sell[prev],MES[prev])),
+    kp(int.format(O.pos[cur]),'Clientes positivados · '+MES[cur],dl(O.pos[cur],O.pos[prev],MES[prev])),
+    kp(cob[cur].toFixed(1).replace('.',',')+'%','Cobertura (positivados ÷ carteira de '+int.format(O.cart[cur])+')',dpp(cob[cur],cob[prev])),
+    kp(MIX&&O.skuN[2]?skuV[2].toFixed(1).replace('.',','):'–','Média de SKU por PDV · '+MES[cur],MIX&&skuV[1]?dl(skuV[2],skuV[1],MES[prev]):''),
+    kp(R0(tk),'Ticket médio por PDV positivado',dl(tk,tkP,MES[prev]))].join('');
+  const por=st.gv==='sup'?'sup':'rca',mp=por==='sup'?O.sup:O.rca;
+  const nome=k=>por==='sup'?(D.sups[k]||'—'):rcaLabel(k);
+  const rows=[...mp.entries()].map(([k,o])=>({k,o,s:o.sell[cur],p:o.pos[cur],c:o.cart[cur],sk:o.skuN[2]?o.sku[2]/o.skuN[2]:0,sp:o.sell[prev]})).filter(r=>r.s>0||r.p>0).sort((a,b)=>b.s-a.s);
+  const mxS=Math.max(...rows.map(r=>r.s),1),lim=st.gAll?rows.length:15;
+  const sel=por==='sup'?(st.sup!==''&&st.rca===''?String(st.sup):''):String(st.rca);
+  const tbl=rows.slice(0,lim).map((r,i)=>{const cv=r.c?r.p/r.c*100:0;return `<tr data-g${por}="${r.k}" class="${String(r.k)===sel?'sel':''}" tabindex="0"><td class="pos">${i+1}</td><td class="gnm">${esc(nome(r.k))}</td>
+    <td><div class="gbar"><i style="width:${(r.s/mxS*100).toFixed(1)}%"></i></div><b class="num">${R0(r.s)}</b></td><td class="r">${dl(r.s,r.sp,MES[prev])||'<span class="muted">–</span>'}</td>
+    <td class="r num">${int.format(r.p)}</td><td class="r num">${int.format(r.c)}</td>
+    <td><div class="gbar ok"><i style="width:${Math.min(100,cv).toFixed(1)}%"></i></div><span class="num">${cv.toFixed(1).replace('.',',')}%</span></td>
+    <td class="r num">${MIX&&r.sk?r.sk.toFixed(1).replace('.',','):'–'}</td></tr>`}).join('');
+  el.innerHTML=`<div class="viewhead"><div><h2>Visão geral${esc(scopeLabel())}</h2><p>Como a equipe está entregando: sell-out de Jazam, positivação, cobertura da carteira e média de SKU por PDV. Os filtros de supervisão, RCA e cidade valem para tudo aqui; clique numa linha do ranking para filtrar.</p></div></div>
+    <div class="kpis">${kpis}</div>
+    <div class="ggrid">
+      <div class="gcard"><div class="gh"><h3>Sell-out Jazam por mês</h3><span class="muted small">R$ vendidos</span></div>${gBars(O.sell,mm,cur,gMil,'gg1')}</div>
+      <div class="gcard"><div class="gh"><h3>Positivação (cobertura da carteira)</h3><span class="muted small">% dos clientes ativos que compraram Jazam</span></div>${gLine(cob,mm,v=>v.toFixed(0)+'%','gg2')}</div>
+      <div class="gcard"><div class="gh"><h3>Média de SKU por PDV</h3><span class="muted small">SKUs Jazam distintos por cliente positivado${MIX?'':' · sem dados de SKU'}</span></div>${MIX?gBars(skuV,skuL,2,v=>v.toFixed(1).replace('.',','),'gg3'):'<div class="empty">Sem dados de SKU carregados.</div>'}</div>
+    </div>
+    <div class="gcard"><div class="gh"><h3>Ranking ${por==='sup'?'por supervisão':'por RCA'} · ${MES[cur]}</h3>
+      <div class="seg" id="gvSeg"><button type="button" data-gv="rca" aria-pressed="${por==='rca'}">RCA</button><button type="button" data-gv="sup" aria-pressed="${por==='sup'}">Supervisão</button></div></div>
+      <div class="scroll"><table class="gtbl"><thead><tr><th>#</th><th>${por==='sup'?'Supervisão':'RCA'}</th><th>Sell-out Jazam</th><th class="r">vs ${MES[prev]}</th><th class="r">Positivados</th><th class="r">Carteira</th><th>Cobertura</th><th class="r">SKU/PDV</th></tr></thead><tbody>${tbl||'<tr><td colspan="8" class="empty">Sem vendas Jazam neste filtro no mês.</td></tr>'}</tbody></table></div>
+      ${rows.length>15?`<div class="foot"><span class="muted">${st.gAll?'Mostrando todos':'Top 15'} de ${rows.length}</span><button type="button" class="btn" data-gall>${st.gAll?'Ver só os 15 primeiros':'Ver todos'}</button></div>`:''}
+      <div class="foot"><span class="muted small">Cobertura = clientes que compraram Jazam no mês ÷ clientes da carteira que compraram qualquer indústria no mês. SKU/PDV usa a planilha de SKUs (${MIX?esc(MIX.dt):'–'}), só ${skuL.join('–')}.</span></div></div>`;
+}
+document.addEventListener('click',e=>{
+  const gv=e.target.closest('[data-gv]');if(gv){st.gv=gv.dataset.gv;renderGeral();return}
+  if(e.target.closest('[data-gall]')){st.gAll=!st.gAll;renderGeral();return}
+  const tr=e.target.closest('tr[data-grca],tr[data-gsup]');if(!tr)return;
+  if(tr.dataset.grca!==undefined){const ri=tr.dataset.grca;const on=String(st.rca)===ri;if(on){st.rca=''}else{st.rca=ri;if(st.sup==='')st.sup=String(mainSup(+ri))}}
+  else{const si=tr.dataset.gsup;const on=String(st.sup)===si&&st.rca==='';st.sup=on?'':si;st.rca=''}
+  st.all=false;renderFilters();renderAll()});
 
 function skuBlock(c){
   if(!HUB.sku)return `<div class="callout info"><b>Mix Jazam por produto</b><span>Importe a venda por produto em ↑ Subir dados para ver os itens que o cliente compra e os que faltam.</span></div>`;
