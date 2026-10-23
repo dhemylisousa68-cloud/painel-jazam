@@ -409,6 +409,10 @@ body.vgeral #fPer button[data-p]{display:none}
 .fotobody{overflow:auto;padding:14px;background:var(--soft);display:grid;place-items:start center}
 .fotobody img{max-width:100%;height:auto;border-radius:8px;box-shadow:0 6px 24px rgba(31,26,28,.18);background:#fff}
 .fotoact{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+/* semáforo da tabela de ranking: só texto colorido */
+.gv-ok{color:var(--ok);font-weight:700}
+.gv-md{color:var(--warn);font-weight:700}
+.gv-bad{color:var(--bad);font-weight:700}
 </style>
 
 <header class="redhead" id="redhead">
@@ -1973,19 +1977,22 @@ function renderGeral(){
   const vsLab=dd?'':'vs '+(prev>=0?MES[prev]:'');
   /* tabela enxuta, sem cores: meta de sell-out, sell-out, % da meta, potencial, SKU/PDV, meta de positivação e positivação */
   const dash='<span class="muted">–</span>';
+  /* % da meta: 100% ou mais verde, de 50% a 99% amarelo, abaixo de 50% vermelho. Gap = realizado − meta: negativo vermelho, passou da meta verde */
+  const pcel=(real,meta)=>{if(!meta)return `<td class="r num">${dash}</td>`;const p=Math.round(real/meta*100);return `<td class="r num ${p>=100?'gv-ok':p>=50?'gv-md':'gv-bad'}">${int.format(p)}%</td>`};
+  const gcel=(gap,meta,money)=>{if(!meta)return `<td class="r num">${dash}</td>`;const a=Math.abs(Math.round(gap)),t=money?R0(a):int.format(a);return `<td class="r num ${gap>=0?'gv-ok':'gv-bad'}">${gap>=0?'+':'−'}${t}</td>`};
   const tbl=rows.slice(0,lim).map((r,i)=>{const mt0=metaOf(r.k)||{},ms=mt0.s,mp=mt0.p,tkt=r.p?r.s/r.p:0,pot=Math.max(0,r.c-r.p)*tkt;
     return `<tr data-g${por}="${r.k}" class="${String(r.k)===sel?'sel':''}" tabindex="0"><td class="pos">${i+1}</td><td class="gnm">${esc(nome(r.k))}</td>
-    <td class="r num">${ms?R0(ms):dash}</td><td class="r num"><b>${R0(r.s)}</b></td><td class="r num">${ms?int.format(Math.round(r.s/ms*100))+'%':dash}</td>
+    <td class="r num">${ms?R0(ms):dash}</td><td class="r num"><b>${R0(r.s)}</b></td>${pcel(r.s,ms)}${gcel(r.s-ms,ms,true)}
     <td class="r num">${pot?R0(pot):dash}</td><td class="r num">${MIX&&r.sk?pt1(r.sk):dash}</td>
-    <td class="r num">${mp?int.format(mp):dash}</td><td class="r num"><b>${int.format(r.p)}</b></td></tr>`}).join('');
+    <td class="r num">${mp?int.format(mp):dash}</td><td class="r num"><b>${int.format(r.p)}</b></td>${pcel(r.p,mp)}${gcel(r.p-mp,mp,false)}</tr>`}).join('');
   el.innerHTML=`<div class="viewhead"><div><h2>${titulo}</h2><p>Como a equipe está entregando: sell-out de Jazam, positivação, cobertura da carteira e média de SKU por PDV. Os filtros de supervisão, RCA e período valem para tudo aqui; clique numa linha do ranking para filtrar. No calendário, escolha o mês e depois os dias.</p></div></div>
     <div class="kpis">${kpiList.join('')}</div>
     <div class="ggrid">${charts.map(c=>`<div class="gcard"><div class="gh"><h3>${c[0]}</h3><span class="muted small">${c[1]}</span></div>${c[2]}</div>`).join('')}</div>
     <div class="gcard"><div class="gh"><h3>Ranking ${por==='sup'?'por supervisão':'por RCA'} · ${dd?(dd.a===dd.b?dd.a+' de '+MES[dd.m]:dd.a+'–'+dd.b+' '+MES[dd.m]):MES[cur]}</h3>
       <div class="seg" id="gvSeg"><button type="button" data-gv="rca" aria-pressed="${por==='rca'}">RCA</button><button type="button" data-gv="sup" aria-pressed="${por==='sup'}">Supervisão</button></div></div>
-      <div class="scroll"><table class="gtbl"><thead><tr><th>#</th><th>${por==='sup'?'Supervisão':'RCA'}</th><th class="r">Meta sell-out</th><th class="r">Sell-out</th><th class="r">% da meta</th><th class="r">Potencial</th><th class="r">SKU/PDV</th><th class="r">Meta positivação</th><th class="r">Positivação</th></tr></thead><tbody>${tbl||'<tr><td colspan="9" class="empty">Sem vendas Jazam neste filtro no período.</td></tr>'}</tbody></table></div>
+      <div class="scroll"><table class="gtbl"><thead><tr><th>#</th><th>${por==='sup'?'Supervisão':'RCA'}</th><th class="r">Meta sell-out</th><th class="r">Sell-out</th><th class="r">% da meta</th><th class="r">Gap sell-out</th><th class="r">Potencial</th><th class="r">SKU/PDV</th><th class="r">Meta positivação</th><th class="r">Positivação</th><th class="r">% da meta</th><th class="r">Gap positivação</th></tr></thead><tbody>${tbl||'<tr><td colspan="12" class="empty">Sem vendas Jazam neste filtro no período.</td></tr>'}</tbody></table></div>
       ${rows.length>15?`<div class="foot"><span class="muted">${st.gAll?'Mostrando todos':'Top 15'} de ${rows.length}</span><button type="button" class="btn" data-gall>${st.gAll?'Ver só os 15 primeiros':'Ver todos'}</button></div>`:''}
-      <div class="foot"><span class="muted small">Potencial = clientes da carteira que ainda não compraram Jazam no período × ticket médio do ${por==='sup'?'time':'RCA'} (o que entraria se eles comprassem como os já positivados). ${dd?fonte+' ':''}SKU/PDV ${dd?'conta os SKUs vendidos nos dias escolhidos.':`usa a planilha de SKUs (${MIX?esc(MIX.dt):'–'}), só ${skuL.join('–')}.`}${hasMeta?` Metas de ${esc(MIX.metasMes||'')} da planilha ${esc(MIX.metasSrc||'de metas')}.`:(metaOk?' Metas: ainda não cadastradas para este filtro.':' Metas: só existem para o mês da planilha.')}</span></div></div>`;
+      <div class="foot"><span class="muted small">Gap = realizado − meta (R$ no sell-out, clientes na positivação): negativo é o que falta, positivo é o que passou da meta. % da meta: verde a partir de 100%, amarelo de 50% a 99%, vermelho abaixo de 50%. Potencial = clientes da carteira que ainda não compraram Jazam no período × ticket médio do ${por==='sup'?'time':'RCA'} (o que entraria se eles comprassem como os já positivados). ${dd?fonte+' ':''}SKU/PDV ${dd?'conta os SKUs vendidos nos dias escolhidos.':`usa a planilha de SKUs (${MIX?esc(MIX.dt):'–'}), só ${skuL.join('–')}.`}${hasMeta?` Metas de ${esc(MIX.metasMes||'')} da planilha ${esc(MIX.metasSrc||'de metas')}.`:(metaOk?' Metas: ainda não cadastradas para este filtro.':' Metas: só existem para o mês da planilha.')}</span></div></div>`;
 }
 document.addEventListener('click',e=>{
   const gv=e.target.closest('[data-gv]');if(gv){st.gv=gv.dataset.gv;renderGeral();return}
