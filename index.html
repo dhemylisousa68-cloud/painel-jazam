@@ -835,7 +835,7 @@ function renderRank(){
   const secH=(st.view==='bomb'||st.view==='bomat'||st.view==='prim')?'Indústrias no período':'Compra total no período';
   /* venda Jazam de cada cliente em todas as abas (na aba Jazam ela já é a métrica principal) */
   const colJz=st.view!=='jazam';
-  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média/mês</th><th>Meses c/ compra</th><th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}<th class="r">${secH}</th><th>Plano</th></tr>`;
+  $('rHead').innerHTML=`<tr><th>#</th><th>Cliente</th><th>RCA</th><th>Situação</th><th class="r">${esc(V.metric)} ${perLabel(st.per,true)}</th><th class="r">Média/mês</th><th>Jan–${MES[M-1]}</th>${colJz?`<th class="r">Venda Jazam ${perLabel(st.per,true)}</th>`:''}<th class="r">${secH}</th><th>Plano</th></tr>`;
   const show=st.all?L.ranked.slice(0,600):top20;
   $('rBody').innerHTML=show.length?show.map((x,i)=>{const c=x.c,s=jzStatus(c),ri=topRca(c,V.pred);
     return `<tr data-ci="${c.i}" tabindex="0"><td class="pos">${i+1}</td>
@@ -843,9 +843,9 @@ function renderRank(){
     <td class="small">${ri===null?'—':esc(D.rcas[ri])}</td>
     <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}</div></td>
     <td class="r num"><b>${R0(x.v)}</b></td><td class="r num">${R0(x.v/nm)}</td>
-    <td><span class="dots" title="${x.months} de ${nm} meses">${ix.map(k=>`<i class="${x.mon[k]>0?'on':''}"></i>`).join('')}</span> <span class="small muted">${x.months}/${nm}</span></td>
+    
     <td>${spark(x.mon,ix,V.col)}</td>${colJz?`<td class="r num">${jzCell(c,ix)}</td>`:''}<td class="r num">${secCell(c,ix)}</td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td></tr>`}).join('')
-    :`<tr><td colspan="${colJz?11:10}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
+    :`<tr><td colspan="${colJz?10:9}" class="empty">Nenhum cliente com compra no período para esse filtro.</td></tr>`;
   const extra=L.zero?` · ${int.format(L.zero)} cliente(s) da base sem compra no período ficaram fora do ranking`:'';
   $('rNote').textContent=(st.all?`Mostrando ${int.format(show.length)} de ${int.format(n)}`:`Top ${Math.min(20,n)} de ${int.format(n)}`)+extra+' · a exportação leva todos';
   $('btnAll').textContent=st.all?'Ver só o top 20':'Ver todos';$('btnAll').hidden=n<=20;
@@ -2058,7 +2058,7 @@ function fotoCanvas(){
   const esc0=(scopeBase()||'').replace(/^\s*·\s*/,'')||'Todas as equipes';
   ctx.font='400 14px '+F;ctx.fillText(fotoFit(ctx,[esc0,perLabel(st.per),'Top '+rows.length+' de '+int.format(L.ranked.length)+' clientes'].join('   ·   '),W-2*pad),pad,100);
   for(let x=0,i=0;x<W;x+=64,i++){ctx.fillStyle=i%2?'#FDCD09':'#B3151B';ctx.fillRect(x,hdr-5,Math.min(64,W-x),5)}
-  const cols=[['#',30,'l'],['Cliente',318,'l'],['RCA',172,'l'],['Situação',152,'l'],[V.metric+' '+perLabel(st.per,true),118,'r'],['Média/mês',92,'r'],['Meses',54,'c'],['Venda Jazam',108,'r']];
+  const cols=[['#',30,'l'],['Cliente',378,'l'],['RCA',176,'l'],['Situação',156,'l'],[V.metric+' '+perLabel(st.per,true),124,'r'],['Média/mês',96,'r'],['Venda Jazam',112,'r']];
   const gap=8;let xs=[],x=pad;for(const c of cols){xs.push(x);x+=c[1]+gap}
   const y0=hdr;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,y0,W,th);
   ctx.fillStyle='#6F6668';ctx.font='700 10.5px '+F;
@@ -2077,8 +2077,7 @@ function fotoCanvas(){
     ctx.fillStyle=pc[0];fotoRR(ctx,xs[3],y+14,pw,24,12);ctx.fill();ctx.fillStyle=pc[1];ctx.fillText(st1,xs[3]+8,y+30);
     ctx.fillStyle='#26201F';ctx.font='700 13.5px '+F;const rt=(t,col,f)=>{ctx.font=f;const w=ctx.measureText(t).width;ctx.fillText(t,xs[col]+cols[col][1]-w,y+31)};
     rt(R0(r.v),4,'700 13.5px '+F);ctx.fillStyle='#6F6668';rt(R0(r.v/nm),5,'400 13px '+F);
-    ctx.fillStyle='#26201F';ctx.font='400 13px '+F;const mt=r.months+'/'+nm,mw=ctx.measureText(mt).width;ctx.fillText(mt,xs[6]+(cols[6][1]-mw)/2,y+31);
-    const jv=jzVal(c,ix);ctx.fillStyle=jv?'#D41E25':'#6F6668';rt(jv?R0(jv):'–',7,(jv?'700 ':'400 ')+'13px '+F)});
+    const jv=jzVal(c,ix);ctx.fillStyle=jv?'#D41E25':'#6F6668';rt(jv?R0(jv):'–',6,(jv?'700 ':'400 ')+'13px '+F)});
   const fy=y0+th+rows.length*rh;ctx.fillStyle='#F5F2F2';ctx.fillRect(0,fy,W,foot);
   ctx.fillStyle='#6F6668';ctx.font='400 11.5px '+F;const d=new Date();ctx.fillText('Gerado em '+d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),pad,fy+27);
   const rtx='Painel Oportunidades Jazam';ctx.font='600 11.5px '+F;ctx.fillText(rtx,W-pad-ctx.measureText(rtx).width,fy+27);
