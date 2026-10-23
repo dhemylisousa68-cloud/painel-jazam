@@ -1971,19 +1971,21 @@ function renderGeral(){
   const mcell=(real,meta)=>{if(!meta)return '<td class="muted">–</td>';const p=real/meta*100;return `<td><div class="gbar ${p>=100?'ok':''}"><i style="width:${Math.min(100,p).toFixed(1)}%"></i></div><span class="num ${p>=100?'okt':p<60?'badt':''}">${int.format(Math.round(p))}%</span> <span class="muted small">de ${meta>=1000?gMil(meta):int.format(meta)}</span></td>`};
   const sel=por==='sup'?(st.sup!==''&&st.rca===''?String(st.sup):''):String(st.rca);
   const vsLab=dd?'':'vs '+(prev>=0?MES[prev]:'');
-  const tbl=rows.slice(0,lim).map((r,i)=>{const cv=r.c?r.p/r.c*100:0;return `<tr data-g${por}="${r.k}" class="${String(r.k)===sel?'sel':''}" tabindex="0"><td class="pos">${i+1}</td><td class="gnm">${esc(nome(r.k))}</td>
-    <td><div class="gbar"><i style="width:${(r.s/mxS*100).toFixed(1)}%"></i></div><b class="num">${R0(r.s)}</b></td><td class="r">${(!dd&&prev>=0?dl(r.s,r.sp,MES[prev]):'')||'<span class="muted">–</span>'}</td>
-    <td class="r num">${int.format(r.p)}</td><td class="r num">${int.format(r.c)}</td>
-    <td><div class="gbar ok"><i style="width:${Math.min(100,cv).toFixed(1)}%"></i></div><span class="num">${pt1(cv)}%</span></td>
-    <td class="r num">${MIX&&r.sk?pt1(r.sk):'–'}</td>${hasMeta?mcell(r.s,(metaOf(r.k)||{}).s)+mcell(r.p,(metaOf(r.k)||{}).p):''}</tr>`}).join('');
+  /* tabela enxuta, sem cores: meta de sell-out, sell-out, % da meta, potencial, SKU/PDV, meta de positivação e positivação */
+  const dash='<span class="muted">–</span>';
+  const tbl=rows.slice(0,lim).map((r,i)=>{const mt0=metaOf(r.k)||{},ms=mt0.s,mp=mt0.p,tkt=r.p?r.s/r.p:0,pot=Math.max(0,r.c-r.p)*tkt;
+    return `<tr data-g${por}="${r.k}" class="${String(r.k)===sel?'sel':''}" tabindex="0"><td class="pos">${i+1}</td><td class="gnm">${esc(nome(r.k))}</td>
+    <td class="r num">${ms?R0(ms):dash}</td><td class="r num"><b>${R0(r.s)}</b></td><td class="r num">${ms?int.format(Math.round(r.s/ms*100))+'%':dash}</td>
+    <td class="r num">${pot?R0(pot):dash}</td><td class="r num">${MIX&&r.sk?pt1(r.sk):dash}</td>
+    <td class="r num">${mp?int.format(mp):dash}</td><td class="r num"><b>${int.format(r.p)}</b></td></tr>`}).join('');
   el.innerHTML=`<div class="viewhead"><div><h2>${titulo}</h2><p>Como a equipe está entregando: sell-out de Jazam, positivação, cobertura da carteira e média de SKU por PDV. Os filtros de supervisão, RCA e período valem para tudo aqui; clique numa linha do ranking para filtrar. No calendário, escolha o mês e depois os dias.</p></div></div>
     <div class="kpis">${kpiList.join('')}</div>
     <div class="ggrid">${charts.map(c=>`<div class="gcard"><div class="gh"><h3>${c[0]}</h3><span class="muted small">${c[1]}</span></div>${c[2]}</div>`).join('')}</div>
     <div class="gcard"><div class="gh"><h3>Ranking ${por==='sup'?'por supervisão':'por RCA'} · ${dd?(dd.a===dd.b?dd.a+' de '+MES[dd.m]:dd.a+'–'+dd.b+' '+MES[dd.m]):MES[cur]}</h3>
       <div class="seg" id="gvSeg"><button type="button" data-gv="rca" aria-pressed="${por==='rca'}">RCA</button><button type="button" data-gv="sup" aria-pressed="${por==='sup'}">Supervisão</button></div></div>
-      <div class="scroll"><table class="gtbl"><thead><tr><th>#</th><th>${por==='sup'?'Supervisão':'RCA'}</th><th>Sell-out Jazam</th><th class="r">${vsLab}</th><th class="r">Positivados</th><th class="r">Carteira</th><th>Cobertura</th><th class="r">SKU/PDV</th>${hasMeta?'<th>Meta sell-out</th><th>Meta positivação</th>':''}</tr></thead><tbody>${tbl||'<tr><td colspan="10" class="empty">Sem vendas Jazam neste filtro no período.</td></tr>'}</tbody></table></div>
+      <div class="scroll"><table class="gtbl"><thead><tr><th>#</th><th>${por==='sup'?'Supervisão':'RCA'}</th><th class="r">Meta sell-out</th><th class="r">Sell-out</th><th class="r">% da meta</th><th class="r">Potencial</th><th class="r">SKU/PDV</th><th class="r">Meta positivação</th><th class="r">Positivação</th></tr></thead><tbody>${tbl||'<tr><td colspan="9" class="empty">Sem vendas Jazam neste filtro no período.</td></tr>'}</tbody></table></div>
       ${rows.length>15?`<div class="foot"><span class="muted">${st.gAll?'Mostrando todos':'Top 15'} de ${rows.length}</span><button type="button" class="btn" data-gall>${st.gAll?'Ver só os 15 primeiros':'Ver todos'}</button></div>`:''}
-      <div class="foot"><span class="muted small">Cobertura = clientes que compraram Jazam ÷ clientes da carteira que compraram qualquer indústria no mês. ${dd?fonte+' ':''}SKU/PDV ${dd?'conta os SKUs vendidos nos dias escolhidos.':`usa a planilha de SKUs (${MIX?esc(MIX.dt):'–'}), só ${skuL.join('–')}.`}${hasMeta?` Metas de ${esc(MIX.metasMes||'')} da planilha ${esc(MIX.metasSrc||'de metas')}.`:(metaOk?' Metas: ainda não cadastradas para este filtro.':' Metas: só existem para o mês da planilha.')}</span></div></div>`;
+      <div class="foot"><span class="muted small">Potencial = clientes da carteira que ainda não compraram Jazam no período × ticket médio do ${por==='sup'?'time':'RCA'} (o que entraria se eles comprassem como os já positivados). ${dd?fonte+' ':''}SKU/PDV ${dd?'conta os SKUs vendidos nos dias escolhidos.':`usa a planilha de SKUs (${MIX?esc(MIX.dt):'–'}), só ${skuL.join('–')}.`}${hasMeta?` Metas de ${esc(MIX.metasMes||'')} da planilha ${esc(MIX.metasSrc||'de metas')}.`:(metaOk?' Metas: ainda não cadastradas para este filtro.':' Metas: só existem para o mês da planilha.')}</span></div></div>`;
 }
 document.addEventListener('click',e=>{
   const gv=e.target.closest('[data-gv]');if(gv){st.gv=gv.dataset.gv;renderGeral();return}
