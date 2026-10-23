@@ -326,6 +326,24 @@ body.spopen{overflow:hidden}
 .hbtg{border:0;border-left:1px solid var(--line);background:transparent;cursor:pointer;color:var(--muted);display:grid;place-items:center;padding:0}
 /* os dados entram pela atualização automática: sem botão Subir dados */
 #btnSubir{display:none}
+/* Cabeçalho: fundo escuro com a logo livre (sem caixa branca), faixa da marca embaixo e chip de equipe em destaque */
+.redhead{background:radial-gradient(900px 240px at 6% -50%,rgba(236,33,40,.6),transparent 62%),radial-gradient(700px 200px at 100% 150%,rgba(253,205,9,.2),transparent 60%),linear-gradient(135deg,#190F12,#2B1318 60%,#38161B);box-shadow:0 8px 26px rgba(20,8,10,.35)}
+.redhead::after{content:"";display:block;height:5px;background:repeating-linear-gradient(90deg,#EC2128 0 56px,#FDCD09 56px 112px)}
+.redin{padding-block:14px}
+.logobox{background:none;padding:0;border-radius:0}
+.logobox .logo{width:136px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+.redhead .brand{gap:20px;align-items:center}
+.redhead .eyebrow{color:#FDCD09;opacity:1;letter-spacing:.14em;font-size:10.5px}
+.redhead h1{font-size:clamp(20px,2.6vw,28px);letter-spacing:-.01em}
+#btnEquipe{background:#FDCD09;color:#2A1519;border-color:#FDCD09;font-weight:700;display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:9px 18px}
+#btnEquipe::before{content:"";width:8px;height:8px;border-radius:50%;background:#EC2128;box-shadow:0 0 0 3px rgba(236,33,40,.28)}
+#btnEquipe:hover{background:#FFD92E;border-color:#FFD92E}
+.redhead .modo{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3)}
+.redhead .modo button[aria-pressed="true"]{background:#FDCD09;color:#2A1519}
+.fsbtn{border-color:rgba(255,255,255,.38);border-radius:999px;width:38px;height:36px}
+.fsbtn:hover{background:rgba(255,255,255,.14)}
+.hbhead{background:linear-gradient(135deg,#190F12,#2B1318 60%,#38161B)}
+.hbhead .eyebrow{color:#FDCD09;opacity:1}
 </style>
 
 <header class="redhead" id="redhead">
