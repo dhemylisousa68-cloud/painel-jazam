@@ -1647,6 +1647,11 @@ async function savePlano(c,del){
 }
 /* ---------- Mix de oportunidade: SKUs Jazam com estoque na filial do cliente ---------- */
 const MIX=(()=>{try{return JSON.parse(document.getElementById('mix').textContent)}catch(e){return null}})();
+/* metas de positivação informadas à mão (mês -> supervisão -> RCA -> clientes); só entram quando a 8127 traz positivação zerada */
+const META_POS_MANUAL={'11/2026':{'12':{'65':4,'149':4,'1619':4,'2582':2,'2292':4}}};
+if(MIX&&MIX.metas&&META_POS_MANUAL[MIX.metasMes]){for(const [sup,rcas] of Object.entries(META_POS_MANUAL[MIX.metasMes])){
+  for(const [rca,p] of Object.entries(rcas)){const m=MIX.metas[rca]||(MIX.metas[rca]=[0,0]);if(!(m[1]>0)){m[1]=p;
+    MIX.metasSup=MIX.metasSup||{};const s=MIX.metasSup[sup]||(MIX.metasSup[sup]=[0,0]);s[1]+=p}}}}
 /* filial pela supervisão: Sul/Extremo Sul = 11 · Sudoeste, Sertão, Sudoeste II = 3 · Oeste = 9 (Express segue a região) */
 const FILIAL_SUP={3:3,4:3,14:3,120:3,12:11,50:11,121:11,24:9,96:9,122:9};
 const FILIAL_TXT={3:'Filial 3 · Sudoeste, Sertão e Sudoeste II',9:'Filial 9 · Oeste',11:'Filial 11 · Sul e Extremo Sul'};
