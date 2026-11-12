@@ -1583,8 +1583,7 @@ function renderDrawer(){
   let html=`<div class="dk">${kp(R0(totP),'Compra total · '+perLabel(st.dPer,true))}${kp(R0(totP/n),'Média mensal (todas as indústrias)')}${kp(mCompra+'/'+n,'Meses com compra')}${kp(last>=0?MES[last]+'/'+(D.year||26):'–','Última compra')}
     ${kp(R0(jzP),'Jazam · média '+R0(jzP/n),'--jz')}${kp(R0(cyP),'Cory · média '+R0(cyP/n),'--cy')}${kp(R0(arP),'Arcor + Bagley · média '+R0(arP/n),'--ar')}${kp(R0(mdP),'Mondelez · média '+R0(mdP/n),'--md')}</div>`;
   if(!c.atende){const ref=refJazam(c.ramo,ix);
-    html+=`<div class="callout op"><b>Oportunidade de primeira venda Jazam</b><span>Cliente ativo com ${nInd} indústria(s) no período e média de ${R0(totP/n)}/mês, sem compra de Jazam em 20${D.year||26}.</span>
-      ${ref?`<span>Referência: ${int.format(ref.n)} clientes do ramo <b>${esc(c.ramo)}</b> que compram Jazam fazem em média (mediana) <b>${R0(ref.med)}/mês</b> de Jazam.</span>`:''}</div>`;
+    html+=`<div class="callout op"><b>Oportunidade de primeira venda Jazam</b><span>Cliente ativo com ${nInd} indústria(s) no período e média de ${R0(totP/n)}/mês, sem compra de Jazam em 20${D.year||26}.</span></div>`;
   } else html+=`<div class="callout ok"><b>Já compra Jazam</b><span>Jazam representa ${pct(jzP,totP)} da compra do cliente no período. Último mês com Jazam: ${MES[c.jzLast]}.</span></div>`;
   // plano de ação
   html+='<div class="mixnarrow" id="mixNarrow"></div>';
