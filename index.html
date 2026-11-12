@@ -950,7 +950,7 @@ function renderRota(){
   if(HUB.rota&&!st.diaEscolhido&&!porDia[st.dia]){const p=DIAS.find(([d])=>porDia[d]>0);if(p)st.dia=p[0]}
   $('fDia').innerHTML=DIAS.map(([d,n])=>`<button type="button" data-d="${d}" aria-pressed="${st.dia===d}">${n}${HUB.rota?`<span class="ct">${int.format(porDia[d]||0)}</span>`:''}</button>`).join('');
   $('fSoOp').checked=st.soOp;
-  $('rtHead').innerHTML=`<tr><th>Seq.</th><th>Cliente</th>${ri===null?'<th>RCA</th>':''}<th>Situação</th><th>Plano</th><th>Indústrias que compra</th><th class="r">Média mensal (trim.)</th><th class="r">Jazam (trim.)</th><th class="r">Sugestão 1º pedido Jazam</th><th>Visita</th></tr>`;
+  $('rtHead').innerHTML=`<tr><th>Seq.</th><th>Cliente</th>${ri===null?'<th>RCA</th>':''}<th>Situação</th><th>Plano</th><th>Indústrias que compra</th><th class="r">Média mensal (trim.)</th><th class="r">Jazam (trim.)</th><th>Visita</th></tr>`;
   if(false){info.innerHTML=`<div class="callout info"><b>Escolha um RCA no filtro acima</b><span>Sem rota importada, o roteiro mostra a carteira de um RCA por vez.</span></div>`;$('rtKpis').innerHTML='';$('rtBody').innerHTML='';LAST.rota=[];$('rtTitle').textContent='Roteiro do dia';return}
   $('rtTitle').textContent='Roteiro do dia · '+(ri!==null?D.rcas[ri]:'todos os RCAs'+scopeLabel())+' · '+DIANOME[st.dia];
   let list;
@@ -974,7 +974,7 @@ function renderRota(){
     <td class="cli"><b>${esc(c.name)}</b><small>${c.code} · ${esc(c.city)} · ${esc(c.ramo)}</small></td>${ri===null?`<td class="small">${e&&e.ri>=0?esc(D.rcas[e.ri]):'–'}</td>`:''}
     <td><div class="stack"><span class="pill ${s.cls}">${esc(s.txt)}</span>${credPill(c)}${gPosPill(c)}</div></td><td>${planoPill(c)||'<span class="muted small">—</span>'}</td>
     <td>${fs.map(f=>`<span class="tag ${fornCls(f)}">${esc(fornName(f))}</span>`).join('')||'<span class="muted small">outras</span>'}</td>
-    <td class="r num">${R0(sum(ix.map(k=>c.tot[k]))/3)}</td><td class="r num">${R0(sum(ix.map(k=>c.jz[k])))}</td><td class="r num">${ref?R0(ref.med):'–'}</td>
+    <td class="r num">${R0(sum(ix.map(k=>c.tot[k]))/3)}</td><td class="r num">${R0(sum(ix.map(k=>c.jz[k])))}</td>
     <td class="small">${e&&e.dias.size?esc([...e.dias].sort().map(d=>DIANOME[d]).join(', ')+(e.freq?' · '+e.freq:'')):'–'}</td></tr>`}).join('')
     :`<tr><td colspan="10" class="empty">Nenhum cliente para mostrar.</td></tr>`;
 }
@@ -1174,7 +1174,6 @@ function baseCols(c,ix){const p=PLANO.get(String(c.code))||{},cr=credito(c);cons
   r['Compra total no período']=Math.round(sum(ix.map(k=>c.tot[k])));r['Média mensal']=Math.round(sum(ix.map(k=>c.tot[k]))/ix.length);
   r['Jazam no período']=Math.round(sum(ix.map(k=>c.jz[k])));r['Cory no período']=Math.round(sum(ix.map(k=>c.cy[k])));r['Arcor+Bagley no período']=Math.round(sum(ix.map(k=>c.ar[k])));r['Mondelez no período']=Math.round(sum(ix.map(k=>c.md[k])));
   r['Indústrias no período']=industrias(c,ix);r['Última compra Jazam']=c.jzLast>=0?MES[c.jzLast]:'';
-  const ref=!c.atende?refJazam(c.ramo,ix):null;r['Sugestão 1º pedido Jazam (mediana do ramo)']=ref?Math.round(ref.med):'';
   r['Plano - status']=p.status||'';r['Plano - data']=p.data?fmtData(p.data):'';r['Plano - RCA']=p.rca||'';r['Plano - observação']=p.obs||'';
   return r}
 function doExport(kind,btn){
